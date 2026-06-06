@@ -201,8 +201,9 @@ export const DashboardPage: React.FC = () => {
     Promise.all([
       loadImage('/startup_india_logo.png'),
       loadImage('/fitsphere_logo.png'),
-      loadImage('/fitsphere_logo_icon.png')
-    ]).then(([startupImg, fitsphereImg, fitsphereIconImg]) => {
+      loadImage('/fitsphere_logo_icon.png'),
+      loadImage('/gold_seal.jpg')
+    ]).then(([startupImg, fitsphereImg, fitsphereIconImg, goldSealImg]) => {
       // Create high-res canvas (1920x1080) for high quality print
       const canvas = document.createElement('canvas');
       canvas.width = 1920;
@@ -346,32 +347,29 @@ export const DashboardPage: React.FC = () => {
       ctx.drawImage(fitsphereIconImg, leftX - leftR, leftY - leftR, leftR * 2, leftR * 2);
       ctx.restore();
 
-      // Center Gold Seal Rosette (Text-based)
-      ctx.fillStyle = '#D97706'; 
+      // Center Gold Seal Image (replacing text rosette)
+      const centerR = 55;
+      
+      // Draw background circle
+      ctx.fillStyle = '#000000';
       ctx.beginPath();
-      for (let i = 0; i < 30; i++) {
-        const angle = (i * Math.PI * 2) / 30;
-        const r = i % 2 === 0 ? 55 : 45;
-        ctx.lineTo(sealX + Math.cos(angle) * r, sealY + Math.sin(angle) * r);
-      }
-      ctx.closePath();
+      ctx.arc(sealX, sealY, centerR, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#FBBF24'; 
-      ctx.beginPath(); ctx.arc(sealX, sealY, 42, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#D97706';
-      ctx.beginPath(); ctx.arc(sealX, sealY, 38, 0, Math.PI * 2); ctx.fill();
+      // Clip and draw goldSealImg
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, centerR - 1, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(goldSealImg, sealX - centerR, sealY - centerR, centerR * 2, centerR * 2);
+      ctx.restore();
 
-      // Center text inside gold rosette
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#FBBF24';
-      ctx.font = 'bold 10px Outfit, sans-serif';
-      ctx.fillText('FITSPHERE', sealX, sealY - 8);
-      ctx.font = 'bold 9px Outfit, sans-serif';
-      ctx.fillText('GOLD SEAL', sealX, sealY + 4);
-      ctx.font = '900 8px Outfit, sans-serif';
-      ctx.fillText('GRADUATE', sealX, sealY + 14);
+      // Stroke gold border
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, centerR, 0, Math.PI * 2);
+      ctx.stroke();
 
       // Right stamp: Startup India logo image
       const startupX = 1190;
@@ -973,19 +971,17 @@ export const DashboardPage: React.FC = () => {
                           <img src="/fitsphere_logo_icon.png" alt="FitSphere Icon" className="w-full h-full object-cover rounded-full" />
                         </div>
 
-                        {/* Golden Graduate Badge (Interactive Text Seal - Center Circle) */}
+                        {/* Golden Graduate Badge (Interactive Image Seal - Center Circle) */}
                         <motion.div
                           whileHover={{ scale: 1.08, rotateY: 18, rotateX: 18 }}
                           transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                          className="w-18 h-18 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-300 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center cursor-pointer border border-amber-500"
+                          className="w-18 h-18 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-300 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center cursor-pointer border border-amber-500 overflow-hidden"
                           style={{ transformStyle: 'preserve-3d' }}
                         >
-                          <div className="w-full h-full rounded-full bg-amber-950/95 border border-amber-500 flex flex-col items-center justify-center text-center p-1 relative overflow-hidden group">
+                          <div className="w-full h-full rounded-full overflow-hidden bg-black flex items-center justify-center relative group">
                             {/* Shine effect */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                            <span className="text-[7px] text-yellow-400 font-extrabold uppercase leading-none">FitSphere</span>
-                            <span className="text-[7px] text-yellow-300 font-black uppercase tracking-wider my-0.5">Gold Seal</span>
-                            <span className="text-[6px] text-white font-bold uppercase leading-none">Graduate</span>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 z-10 pointer-events-none" />
+                            <img src="/gold_seal.jpg" alt="Gold Seal" className="w-full h-full object-cover rounded-full" />
                           </div>
                         </motion.div>
 
