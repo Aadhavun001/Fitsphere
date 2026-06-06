@@ -181,12 +181,13 @@ export const DashboardPage: React.FC = () => {
       });
     };
 
-    // Load all three logos before drawing
+    // Load all logos before drawing
     Promise.all([
       loadImage('/msme_logo.png'),
       loadImage('/startup_india_logo.png'),
-      loadImage('/fitsphere_logo.png')
-    ]).then(([msmeImg, startupImg, fitsphereImg]) => {
+      loadImage('/fitsphere_logo.png'),
+      loadImage('/fitsphere_logo_icon.png')
+    ]).then(([msmeImg, startupImg, fitsphereImg, fitsphereIconImg]) => {
       // Create high-res canvas (1920x1080) for high quality print
       const canvas = document.createElement('canvas');
       canvas.width = 1920;
@@ -321,15 +322,8 @@ export const DashboardPage: React.FC = () => {
       ctx.fillStyle = '#D97706';
       ctx.beginPath(); ctx.arc(sealX, sealY, 38, 0, Math.PI * 2); ctx.fill();
 
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#FBBF24';
-      ctx.font = 'bold 10px Outfit, sans-serif';
-      ctx.fillText('FITSPHERE', sealX, sealY - 8);
-      ctx.font = 'bold 9px Outfit, sans-serif';
-      ctx.fillText('GOLD SEAL', sealX, sealY + 4);
-      ctx.font = '900 8px Outfit, sans-serif';
-      ctx.fillText('GRADUATE', sealX, sealY + 14);
+      // Draw the FitSphere logo icon centered inside the gold seal
+      ctx.drawImage(fitsphereIconImg, sealX - 25, sealY - 25, 50, 50);
 
       // Right stamp: Startup India logo image
       const startupX = 1190;
@@ -821,7 +815,7 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* Gold Completion Certificate Modal */}
-      {showCertModal && activeCert && (
+      {showCertModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
         >
@@ -848,140 +842,147 @@ export const DashboardPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Certificate Canvas / HTML Preview Container */}
-            <div 
-              ref={certContainerRef}
-              className="w-full flex items-center justify-center overflow-hidden py-2"
-              style={{ height: `${427.5 * certScale + 16}px` }}
-            >
-              {/* HTML Certificate Preview */}
-              <div 
-                id="fitsphere-certificate-preview"
-                className="min-w-[760px] aspect-[16/9] bg-gradient-to-tr from-gray-900 to-slate-950 border-[5px] border-amber-600 rounded-2xl p-8 relative flex flex-col items-center justify-between shadow-2xl overflow-hidden text-center select-none origin-center"
-                style={{
-                  boxShadow: '0 0 40px rgba(245, 158, 11, 0.1)',
-                  transform: `scale(${certScale})`,
-                }}
-              >
-                {/* Subtle inner gold border */}
-                <div className="absolute inset-1.5 border border-yellow-400/50 rounded-xl pointer-events-none" />
-
-                {/* Corner Accents */}
-                <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-yellow-500" />
-                <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-yellow-500" />
-                <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-yellow-500" />
-                <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-yellow-500" />
-
-                {/* Top: Logo & Title */}
-                <div className="flex flex-col items-center gap-1 mt-2">
-                  {/* FitSphere Logo Image */}
-                  <div className="flex items-center gap-2">
-                    <img src="/fitsphere_logo.png" alt="FitSphere Logo" className="h-8 w-auto object-contain" />
-                    <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Estd. 2026</span>
-                  </div>
-                  <h1 className="text-2xl font-black text-yellow-400 tracking-widest uppercase mt-3" style={{ fontFamily: 'Cinzel, serif' }}>
-                    Certificate of Completion
-                  </h1>
-                  <p className="text-[11px] text-gray-400 italic" style={{ fontFamily: 'Playfair Display, serif' }}>
-                    This is proudly presented to
-                  </p>
-                </div>
-
-                {/* Middle: Student & Course */}
-                <div className="flex flex-col items-center gap-2">
-                  <h2 className="text-4xl font-extrabold text-white italic tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>
-                    {activeCert.userName}
-                  </h2>
-                  <div className="w-80 h-[2px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent" />
-                  <p className="text-[11px] text-gray-400 italic" style={{ fontFamily: 'Playfair Display, serif' }}>
-                    for outstanding dedication and mastery of the professional program
-                  </p>
-                  <h3 className="text-xl font-black text-yellow-400 font-sans tracking-wide uppercase mt-1">
-                    {activeCert.courseTitle}
-                  </h3>
-                  <p className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase">
-                    Evaluated & Certified by the Elite Coaching Division
-                  </p>
-                </div>
-
-                {/* Bottom: Signatures, Stamps, Metadata */}
-                <div className="w-full flex items-end justify-between px-6 mb-2">
-                  {/* Instructor Signature */}
-                  <div className="flex flex-col items-center w-48 text-[9px] text-gray-500">
-                    {/* Placeholder cursive signature using path */}
-                    <svg className="w-24 h-8 text-brand-cyan/50 stroke-current fill-none stroke-2 -mb-1" viewBox="0 0 100 30">
-                      <path d="M10,20 Q25,5 40,25 T70,10 T90,20" stroke="currentColor" fill="none" strokeWidth={2} />
-                    </svg>
-                    <div className="w-full h-[1px] bg-white/10 mb-1" />
-                    <span className="text-white font-bold">Dr. Muthu Saravanan</span>
-                    <span>Instructor / Physiologist</span>
-                  </div>
-
-                  {/* Three Seals in the Center */}
-                  <div className="flex items-center gap-4 -mb-2">
-                    {/* MSME Stamp */}
-                    <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-1 shadow-md overflow-hidden border border-emerald-500/20">
-                      <img src="/msme_logo.png" alt="MSME Logo" className="w-full h-full object-contain" />
-                    </div>
-
-                    {/* Golden Graduate Badge (Interactive) */}
-                    <motion.div
-                      whileHover={{ scale: 1.08, rotateY: 18, rotateX: 18 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
-                      className="w-18 h-18 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-300 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center cursor-pointer border border-amber-500"
-                      style={{ transformStyle: 'preserve-3d' }}
-                    >
-                      <div className="w-full h-full rounded-full bg-amber-950/90 border border-amber-500 flex flex-col items-center justify-center text-center p-1 relative overflow-hidden group">
-                        {/* Shine effect */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                        <span className="text-[7px] text-yellow-400 font-extrabold uppercase leading-none">FitSphere</span>
-                        <span className="text-[7px] text-yellow-300 font-black uppercase tracking-wider my-0.5">Gold Seal</span>
-                        <span className="text-[6px] text-white font-bold uppercase leading-none">Graduate</span>
-                      </div>
-                    </motion.div>
-
-                    {/* Startup India Stamp */}
-                    <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-1 shadow-md overflow-hidden border border-amber-600/20">
-                      <img src="/startup_india_logo.png" alt="Startup India Logo" className="w-full h-full object-contain" />
-                    </div>
-                  </div>
-
-                  {/* Director Signature */}
-                  <div className="flex flex-col items-center w-48 text-[9px] text-gray-500">
-                    <svg className="w-24 h-8 text-brand-neon/50 stroke-current fill-none stroke-2 -mb-1" viewBox="0 0 100 30">
-                      <path d="M15,15 Q35,25 50,10 T85,20 T95,15" stroke="currentColor" fill="none" strokeWidth={2} />
-                    </svg>
-                    <div className="w-full h-[1px] bg-white/10 mb-1" />
-                    <span className="text-white font-bold">Aadhavun</span>
-                    <span>Director of FitSphere</span>
-                  </div>
-                </div>
-
-                {/* Security Verification footer */}
-                <div className="absolute bottom-4.5 w-full text-[9px] text-gray-400 font-mono flex items-center justify-center gap-1.5">
-                  <span>VERIFICATION CODE: {activeCert.verificationCode}</span>
-                  <span>|</span>
-                  <span>ISSUED: {new Date(activeCert.issueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                </div>
+            {!activeCert ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-4 w-full">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-brand-neon"></div>
+                <span className="text-xs text-gray-400 uppercase tracking-widest font-bold">Synchronizing Certificate...</span>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Certificate Canvas / HTML Preview Container */}
+                <div 
+                  ref={certContainerRef}
+                  className="w-full flex items-center justify-center overflow-hidden py-2"
+                  style={{ height: `${427.5 * certScale + 16}px` }}
+                >
+                  {/* HTML Certificate Preview */}
+                  <div 
+                    id="fitsphere-certificate-preview"
+                    className="min-w-[760px] aspect-[16/9] bg-gradient-to-tr from-gray-900 to-slate-950 border-[5px] border-amber-600 rounded-2xl p-8 relative flex flex-col items-center justify-between shadow-2xl overflow-hidden text-center select-none origin-center"
+                    style={{
+                      boxShadow: '0 0 40px rgba(245, 158, 11, 0.1)',
+                      transform: `scale(${certScale})`,
+                    }}
+                  >
+                    {/* Subtle inner gold border */}
+                    <div className="absolute inset-1.5 border border-yellow-400/50 rounded-xl pointer-events-none" />
 
-            {/* Modal Actions */}
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-white/5">
-              <button
-                onClick={() => setShowCertModal(false)}
-                className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-bold transition-all cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                onClick={downloadCertificateAsPNG}
-                className="w-full sm:w-auto px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black text-xs font-black uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Download className="h-4 w-4 stroke-[2.5]" />
-                Download Certificate (PNG)
-              </button>
-            </div>
+                    {/* Corner Accents */}
+                    <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-yellow-500" />
+                    <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-yellow-500" />
+                    <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-yellow-500" />
+                    <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-yellow-500" />
+
+                    {/* Top: Logo & Title */}
+                    <div className="flex flex-col items-center gap-1 mt-2">
+                      {/* FitSphere Logo Image */}
+                      <div className="flex items-center gap-2">
+                        <img src="/fitsphere_logo.png" alt="FitSphere Logo" className="h-8 w-auto object-contain" />
+                        <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Estd. 2026</span>
+                      </div>
+                      <h1 className="text-2xl font-black text-yellow-400 tracking-widest uppercase mt-3" style={{ fontFamily: 'Cinzel, serif' }}>
+                        Certificate of Completion
+                      </h1>
+                      <p className="text-[11px] text-gray-400 italic" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        This is proudly presented to
+                      </p>
+                    </div>
+
+                    {/* Middle: Student & Course */}
+                    <div className="flex flex-col items-center gap-2">
+                      <h2 className="text-4xl font-extrabold text-white italic tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        {activeCert.userName}
+                      </h2>
+                      <div className="w-80 h-[2px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent" />
+                      <p className="text-[11px] text-gray-400 italic" style={{ fontFamily: 'Playfair Display, serif' }}>
+                        for outstanding dedication and mastery of the professional program
+                      </p>
+                      <h3 className="text-xl font-black text-yellow-400 font-sans tracking-wide uppercase mt-1">
+                        {activeCert.courseTitle}
+                      </h3>
+                      <p className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase">
+                        Evaluated & Certified by the Elite Coaching Division
+                      </p>
+                    </div>
+
+                    {/* Bottom: Signatures, Stamps, Metadata */}
+                    <div className="w-full flex items-end justify-between px-6 mb-2">
+                      {/* Instructor Signature */}
+                      <div className="flex flex-col items-center w-48 text-[9px] text-gray-500">
+                        {/* Placeholder cursive signature using path */}
+                        <svg className="w-24 h-8 text-brand-cyan/50 stroke-current fill-none stroke-2 -mb-1" viewBox="0 0 100 30">
+                          <path d="M10,20 Q25,5 40,25 T70,10 T90,20" stroke="currentColor" fill="none" strokeWidth={2} />
+                        </svg>
+                        <div className="w-full h-[1px] bg-white/10 mb-1" />
+                        <span className="text-white font-bold">Dr. Muthu Saravanan</span>
+                        <span>Instructor / Physiologist</span>
+                      </div>
+
+                      {/* Three Seals in the Center */}
+                      <div className="flex items-center gap-4 -mb-2">
+                        {/* MSME Stamp */}
+                        <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-2.5 shadow-md overflow-hidden border border-emerald-500/20">
+                          <img src="/msme_logo.png" alt="MSME Logo" className="max-w-full max-h-full object-contain" />
+                        </div>
+
+                        {/* Golden Graduate Badge (Interactive) */}
+                        <motion.div
+                          whileHover={{ scale: 1.08, rotateY: 18, rotateX: 18 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                          className="w-18 h-18 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-300 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center cursor-pointer border border-amber-500"
+                          style={{ transformStyle: 'preserve-3d' }}
+                        >
+                          <div className="w-full h-full rounded-full bg-amber-950/90 border border-amber-500 flex flex-col items-center justify-center text-center p-2 relative overflow-hidden group">
+                            {/* Shine effect */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                            <img src="/fitsphere_logo_icon.png" alt="FitSphere Logo" className="w-11 h-11 object-contain" />
+                          </div>
+                        </motion.div>
+
+                        {/* Startup India Stamp */}
+                        <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-2 shadow-md overflow-hidden border border-amber-600/20">
+                          <img src="/startup_india_logo.png" alt="Startup India Logo" className="max-w-full max-h-full object-contain" />
+                        </div>
+                      </div>
+
+                      {/* Director Signature */}
+                      <div className="flex flex-col items-center w-48 text-[9px] text-gray-500">
+                        <svg className="w-24 h-8 text-brand-neon/50 stroke-current fill-none stroke-2 -mb-1" viewBox="0 0 100 30">
+                          <path d="M15,15 Q35,25 50,10 T85,20 T95,15" stroke="currentColor" fill="none" strokeWidth={2} />
+                        </svg>
+                        <div className="w-full h-[1px] bg-white/10 mb-1" />
+                        <span className="text-white font-bold">Aadhavun</span>
+                        <span>Director of FitSphere</span>
+                      </div>
+                    </div>
+
+                    {/* Security Verification footer */}
+                    <div className="absolute bottom-4.5 w-full text-[9px] text-gray-400 font-mono flex items-center justify-center gap-1.5">
+                      <span>VERIFICATION CODE: {activeCert.verificationCode}</span>
+                      <span>|</span>
+                      <span>ISSUED: {new Date(activeCert.issueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Actions */}
+                <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-white/5">
+                  <button
+                    onClick={() => setShowCertModal(false)}
+                    className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={downloadCertificateAsPNG}
+                    className="w-full sm:w-auto px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black text-xs font-black uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Download className="h-4 w-4 stroke-[2.5]" />
+                    Download Certificate (PNG)
+                  </button>
+                </div>
+              </>
+            )}
 
           </motion.div>
         </div>
