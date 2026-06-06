@@ -56,7 +56,7 @@ FitSphere/
    npm install
    ```
 3. Copy local environment configurations:
-   Create a `.env` file inside `frontend/` containing your Firebase credentials:
+   Create a `.env` file inside `frontend/` containing your Firebase credentials and local backend reference:
    ```env
    VITE_FIREBASE_API_KEY=AIzaSyB5vIU9...
    VITE_FIREBASE_AUTH_DOMAIN=fitsphere-app-60e5f.firebaseapp.com
@@ -64,6 +64,7 @@ FitSphere/
    VITE_FIREBASE_STORAGE_BUCKET=fitsphere-app-60e5f.firebasestorage.app
    VITE_FIREBASE_MESSAGING_SENDER_ID=56740617357
    VITE_FIREBASE_APP_ID=1:56740617357:web:b7de1a8e60cc347c0d56c4
+   VITE_API_URL=http://localhost:5000
    ```
 4. Run the Vite development server:
    ```bash
@@ -140,5 +141,7 @@ All routes are client-side managed using `react-router-dom` in `frontend/src/App
 1. Go to the [Vercel Console](https://vercel.com) and click **Add New Project**.
 2. Link your GitHub repository.
 3. Set the **Root Directory** settings to **`frontend`**.
-4. Add all environment variables listed in the *Frontend Setup* step under **Environment Variables** in the Vercel project panel.
+4. Add all environment variables listed in the *Frontend Setup* step under **Environment Variables** in the Vercel project panel:
+   - Include `VITE_FIREBASE_...` keys.
+   - Add **`VITE_API_URL`** set to your hosted Render backend service URL: `https://fitsphere-backend.onrender.com`.
 5. Click **Deploy**. Vercel will automatically compile the static code and serve it via global Edge networks!
