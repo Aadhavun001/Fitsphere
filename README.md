@@ -1,4 +1,4 @@
-# 🏋️‍♂️ FitSphere: Science-Backed Muscular Hypertrophy & Athletic Adaptation Hub
+# 🏋️‍♂️ FitSphere: Rewrite your physical limits
 
 [![React 19](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
