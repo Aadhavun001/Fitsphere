@@ -89,6 +89,10 @@
 }
 
 /* Base custom styles */
+html {
+  scroll-padding-top: 96px;
+}
+
 body {
   background-color: var(--bg-dark);
   color: var(--text-primary);

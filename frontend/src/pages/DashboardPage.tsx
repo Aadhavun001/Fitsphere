@@ -197,13 +197,12 @@ export const DashboardPage: React.FC = () => {
       });
     };
 
-    // Load all logos before drawing
+    // Load all logos before drawing (excluding unused MSME logo)
     Promise.all([
-      loadImage('/msme_logo.png'),
       loadImage('/startup_india_logo.png'),
       loadImage('/fitsphere_logo.png'),
       loadImage('/fitsphere_logo_icon.png')
-    ]).then(([msmeImg, startupImg, fitsphereImg, fitsphereIconImg]) => {
+    ]).then(([startupImg, fitsphereImg, fitsphereIconImg]) => {
       // Create high-res canvas (1920x1080) for high quality print
       const canvas = document.createElement('canvas');
       canvas.width = 1920;
@@ -242,8 +241,14 @@ export const DashboardPage: React.FC = () => {
       ctx.beginPath(); ctx.moveTo(40, 960); ctx.lineTo(120, 1040); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(1880, 960); ctx.lineTo(1800, 1040); ctx.stroke();
 
-      // 3. Draw FitSphere Banner Logo (centered at x=960, y=140 with width 320 and height 80)
-      ctx.drawImage(fitsphereImg, 960 - 160, 100, 320, 80);
+      // 3. Draw "ESTD. 2026" above logo and FitSphere Banner Logo (centered at x=960, y=140)
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.7)'; // Gold color
+      ctx.font = 'bold 12px Outfit, sans-serif';
+      ctx.fillText('ESTD. 2026', 960, 82);
+
+      ctx.drawImage(fitsphereImg, 960 - 160, 102, 320, 80);
 
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -311,18 +316,37 @@ export const DashboardPage: React.FC = () => {
       ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.moveTo(1390, 820); ctx.bezierCurveTo(1450, 840, 1500, 795, 1580, 825); ctx.stroke();
 
-      // 5. Draw Seals (MSME logo, Gold seal, Startup India logo)
+      // 5. Draw Seals (FitSphere Icon stamp, Center Gold Seal Rosette, Startup India logo)
       const sealX = 960;
       const sealY = 855;
       
-      // Left stamp: MSME logo image
-      const msmeX = 730;
-      const msmeY = 855;
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath(); ctx.arc(msmeX, msmeY, 45, 0, Math.PI * 2); ctx.fill();
-      ctx.drawImage(msmeImg, msmeX - 35, msmeY - 35, 70, 70);
+      // Left stamp: FitSphere Browser Logo Icon (replacing MSME registration)
+      const leftX = 730;
+      const leftY = 855;
+      const leftR = 45;
 
-      // Center Gold Seal Rosette
+      // Draw black background circle
+      ctx.fillStyle = '#000000';
+      ctx.beginPath(); 
+      ctx.arc(leftX, leftY, leftR, 0, Math.PI * 2); 
+      ctx.fill();
+
+      // Stroke border (gold)
+      ctx.strokeStyle = '#FBBF24';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(leftX, leftY, leftR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Clip and draw fitsphereIconImg
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(leftX, leftY, leftR - 1, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(fitsphereIconImg, leftX - leftR, leftY - leftR, leftR * 2, leftR * 2);
+      ctx.restore();
+
+      // Center Gold Seal Rosette (Text-based)
       ctx.fillStyle = '#D97706'; 
       ctx.beginPath();
       for (let i = 0; i < 30; i++) {
@@ -338,8 +362,16 @@ export const DashboardPage: React.FC = () => {
       ctx.fillStyle = '#D97706';
       ctx.beginPath(); ctx.arc(sealX, sealY, 38, 0, Math.PI * 2); ctx.fill();
 
-      // Draw the FitSphere logo icon centered inside the gold seal
-      ctx.drawImage(fitsphereIconImg, sealX - 25, sealY - 25, 50, 50);
+      // Center text inside gold rosette
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#FBBF24';
+      ctx.font = 'bold 10px Outfit, sans-serif';
+      ctx.fillText('FITSPHERE', sealX, sealY - 8);
+      ctx.font = 'bold 9px Outfit, sans-serif';
+      ctx.fillText('GOLD SEAL', sealX, sealY + 4);
+      ctx.font = '900 8px Outfit, sans-serif';
+      ctx.fillText('GRADUATE', sealX, sealY + 14);
 
       // Right stamp: Startup India logo image
       const startupX = 1190;
@@ -891,10 +923,10 @@ export const DashboardPage: React.FC = () => {
 
                     {/* Top: Logo & Title */}
                     <div className="flex flex-col items-center gap-1 mt-2">
+                      <span className="text-[8px] text-yellow-500/70 font-black tracking-[0.25em] uppercase mb-0.5">ESTD. 2026</span>
                       {/* FitSphere Logo Image */}
                       <div className="flex items-center gap-2">
                         <img src="/fitsphere_logo.png" alt="FitSphere Logo" className="h-8 w-auto object-contain" />
-                        <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Estd. 2026</span>
                       </div>
                       <h1 className="text-2xl font-black text-yellow-400 tracking-widest uppercase mt-3" style={{ fontFamily: 'Cinzel, serif' }}>
                         Certificate of Completion
@@ -936,26 +968,28 @@ export const DashboardPage: React.FC = () => {
 
                       {/* Three Seals in the Center */}
                       <div className="flex items-center gap-4 -mb-2">
-                        {/* MSME Stamp */}
-                        <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-2.5 shadow-md overflow-hidden border border-emerald-500/20">
-                          <img src="/msme_logo.png" alt="MSME Logo" className="max-w-full max-h-full object-contain" />
+                        {/* FitSphere Browser Logo Icon (First Circle) */}
+                        <div className="w-14 h-14 rounded-full bg-black flex items-center justify-center p-0 shadow-md overflow-hidden border border-yellow-500/40">
+                          <img src="/fitsphere_logo_icon.png" alt="FitSphere Icon" className="w-full h-full object-cover rounded-full" />
                         </div>
 
-                        {/* Golden Graduate Badge (Interactive) */}
+                        {/* Golden Graduate Badge (Interactive Text Seal - Center Circle) */}
                         <motion.div
                           whileHover={{ scale: 1.08, rotateY: 18, rotateX: 18 }}
                           transition={{ type: "spring", stiffness: 300, damping: 15 }}
                           className="w-18 h-18 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-300 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center cursor-pointer border border-amber-500"
                           style={{ transformStyle: 'preserve-3d' }}
                         >
-                          <div className="w-full h-full rounded-full bg-amber-950/90 border border-amber-500 flex flex-col items-center justify-center text-center p-2 relative overflow-hidden group">
+                          <div className="w-full h-full rounded-full bg-amber-950/95 border border-amber-500 flex flex-col items-center justify-center text-center p-1 relative overflow-hidden group">
                             {/* Shine effect */}
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                            <img src="/fitsphere_logo_icon.png" alt="FitSphere Logo" className="w-11 h-11 object-contain" />
+                            <span className="text-[7px] text-yellow-400 font-extrabold uppercase leading-none">FitSphere</span>
+                            <span className="text-[7px] text-yellow-300 font-black uppercase tracking-wider my-0.5">Gold Seal</span>
+                            <span className="text-[6px] text-white font-bold uppercase leading-none">Graduate</span>
                           </div>
                         </motion.div>
 
-                        {/* Startup India Stamp */}
+                        {/* Startup India Stamp (Third Circle) */}
                         <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-2 shadow-md overflow-hidden border border-amber-600/20">
                           <img src="/startup_india_logo.png" alt="Startup India Logo" className="max-w-full max-h-full object-contain" />
                         </div>

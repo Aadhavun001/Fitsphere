@@ -65,8 +65,8 @@ export const Footer: React.FC = () => {
             <div className="flex flex-col gap-3">
               <Link to="/courses" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">All Courses</Link>
               <Link to="/" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">About Us</Link>
-              <a href="#trainers" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">Our Instructors</a>
-              <a href="#assessment" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">Goal Assessment</a>
+              <Link to="/#trainers" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">Our Instructors</Link>
+              <Link to="/#assessment" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">Goal Assessment</Link>
             </div>
           </div>
 
@@ -74,7 +74,7 @@ export const Footer: React.FC = () => {
           <div className="col-span-1 sm:col-span-4 lg:col-span-2 flex flex-col gap-5">
             <h4 className="font-display font-semibold text-white tracking-wider text-sm uppercase">Support</h4>
             <div className="flex flex-col gap-3">
-              <a href="#faq" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">FAQ Directory</a>
+              <Link to="/#faq" className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">FAQ Directory</Link>
               <a href={`mailto:${useApp().footerConfig?.emailAddress || 'support@fitsphere.com'}`} className="text-gray-400 text-sm hover:text-brand-neon transition-all duration-200">Help Center</a>
               <span className="text-gray-500 text-sm">Mon - Fri: 8 AM - 6 PM</span>
               <span className="text-gray-500 text-sm">{useApp().footerConfig?.phoneNumber || '+1 (800) FIT-SPHR'}</span>
