@@ -19,6 +19,7 @@ export const ProfilePage: React.FC = () => {
 
   // Photo editor states
   const [uploadedImageSrc, setUploadedImageSrc] = useState<string | null>(null);
+  const [imageRatio, setImageRatio] = useState(1);
   const [zoom, setZoom] = useState(1.0);
   const [rotation, setRotation] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
@@ -72,11 +73,19 @@ export const ProfilePage: React.FC = () => {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setUploadedImageSrc(event.target.result as string);
-          setZoom(1.0);
-          setRotation(0);
-          setOffsetX(0);
-          setOffsetY(0);
+          const src = event.target.result as string;
+          const img = new Image();
+          img.src = src;
+          img.onload = () => {
+            setImageRatio(img.width / img.height);
+            setUploadedImageSrc(src);
+            setZoom(1.0);
+            setRotation(0);
+            setOffsetX(0);
+            setOffsetY(0);
+            // Reset input value so the same file can be selected again
+            e.target.value = '';
+          };
         }
       };
       reader.readAsDataURL(file);
@@ -93,6 +102,7 @@ export const ProfilePage: React.FC = () => {
 
   const handleDragMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     if (!isDragging) return;
+    if (e.cancelable) e.preventDefault();
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     setOffsetX(clientX - dragStart.x);
@@ -322,10 +332,12 @@ export const ProfilePage: React.FC = () => {
                             src={uploadedImageSrc}
                             alt="Preview"
                             style={{
+                              width: imageRatio > 1 ? `${192 * imageRatio}px` : '192px',
+                              height: imageRatio > 1 ? '192px' : `${192 / imageRatio}px`,
                               transform: `translate(${offsetX}px, ${offsetY}px) scale(${zoom}) rotate(${rotation}deg)`,
                               transformOrigin: 'center center',
                             }}
-                            className="max-w-none w-full h-full object-contain pointer-events-none select-none transition-transform duration-75"
+                            className="max-w-none absolute pointer-events-none select-none transition-transform duration-75"
                           />
                           {/* Crosshair Overlay */}
                           <div className="absolute inset-0 border border-white/10 rounded-full pointer-events-none flex items-center justify-center">
