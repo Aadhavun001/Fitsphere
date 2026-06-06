@@ -19,7 +19,10 @@ export interface CurriculumSection {
 export interface Instructor {
   name: string;
   role: string;
-  avatar: string;
+  avatar?: string;
+  avatarUrl?: string;
+  imageUrl?: string;
+  image?: string;
   bio: string;
   stats: {
     students: string;

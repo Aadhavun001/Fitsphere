@@ -496,7 +496,7 @@ export const LandingPage: React.FC = () => {
                 >
                   <div className="relative h-60 overflow-hidden">
                     <img
-                      src={instructor.avatar}
+                      src={instructor.avatar || instructor.avatarUrl || instructor.imageUrl || instructor.image || '/trainer_muthu.png'}
                       alt={instructor.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500 grayscale group-hover:grayscale-0"
                     />

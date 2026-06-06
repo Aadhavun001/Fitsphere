@@ -175,7 +175,7 @@ export const CourseDetailPage: React.FC = () => {
             <h3 className="font-display font-bold text-white text-xl uppercase tracking-wider">Meet the Instructor</h3>
             <div className="flex flex-col sm:flex-row gap-6 p-6 rounded-3xl bg-white/5 border border-white/5 items-start sm:items-center">
               <img
-                src={course.instructor.avatar}
+                src={course.instructor.avatar || course.instructor.avatarUrl || course.instructor.imageUrl || course.instructor.image || '/trainer_muthu.png'}
                 alt={course.instructor.name}
                 className="h-20 w-20 rounded-full object-cover border-2 border-brand-cyan shadow-xl"
               />

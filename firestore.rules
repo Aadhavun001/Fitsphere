@@ -60,7 +60,8 @@ service cloud.firestore {
         && isValidString(request.resource.data.courseTitle, 200)
         && isValidString(request.resource.data.issueDate, 100)
         && isValidString(request.resource.data.verificationCode, 100)
-        && isValidString(request.resource.data.badgeType, 50);
+        && isValidString(request.resource.data.badgeType, 50)
+        && (!('certificateImage' in request.resource.data) || isValidString(request.resource.data.certificateImage, 1000000));
     }
 
     // Payments (Logs of purchases made by users)

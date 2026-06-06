@@ -5,7 +5,7 @@ import { Play, CheckSquare, Square, FileText, Plus, Trash2, Award, BookOpen, Mes
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
-import { collection, query, where, onSnapshot, setDoc, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, setDoc, doc, updateDoc } from 'firebase/firestore';
 
 export const DashboardPage: React.FC = () => {
   const {
@@ -141,7 +141,11 @@ export const DashboardPage: React.FC = () => {
 
       const unsubscribe = onSnapshot(certRef, (snap) => {
         if (snap.exists()) {
-          setActiveCert(snap.data());
+          const data = snap.data();
+          setActiveCert(data);
+          if (!data.certificateImage) {
+            uploadCertificateImage(data, certRef);
+          }
         } else {
           // Auto-generate certificate doc on the fly if completed but doc is missing
           const verificationCode = `FS-${activeCourse.id.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -156,7 +160,10 @@ export const DashboardPage: React.FC = () => {
             badgeType: 'Gold'
           };
           setDoc(certRef, newCert)
-            .then(() => setActiveCert(newCert))
+            .then(() => {
+              setActiveCert(newCert);
+              uploadCertificateImage(newCert, certRef);
+            })
             .catch(err => {
               console.warn('Failed to save certificate to Firestore, using local fallback:', err);
               setActiveCert(newCert);
@@ -393,6 +400,206 @@ export const DashboardPage: React.FC = () => {
       link.click();
     }).catch(err => {
       console.error('Failed to load certificate logo images for canvas export:', err);
+    });
+  };
+
+  // Background upload of certificate image representation
+  const uploadCertificateImage = (cert: any, certRef: any) => {
+    if (!cert || !certRef || cert.certificateImage) return;
+
+    const loadImage = (src: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(e);
+        img.src = src;
+      });
+    };
+
+    Promise.all([
+      loadImage('/startup_india_logo.png'),
+      loadImage('/fitsphere_logo.png'),
+      loadImage('/fitsphere_logo_icon.png'),
+      loadImage('/gold_seal.jpg')
+    ]).then(async ([startupImg, fitsphereImg, fitsphereIconImg, goldSealImg]) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // 1. Draw Background (Charcoal radial gradient)
+      const grad = ctx.createRadialGradient(960, 540, 50, 960, 540, 1100);
+      grad.addColorStop(0, '#111827'); 
+      grad.addColorStop(1, '#030712'); 
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1920, 1080);
+
+      const glowGrad = ctx.createRadialGradient(960, 540, 10, 960, 540, 600);
+      glowGrad.addColorStop(0, 'rgba(217, 119, 6, 0.05)'); 
+      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, 1920, 1080);
+
+      // 2. Double gold border
+      ctx.strokeStyle = '#D97706'; 
+      ctx.lineWidth = 6;
+      ctx.strokeRect(50, 50, 1820, 980);
+
+      ctx.strokeStyle = '#FBBF24'; 
+      ctx.lineWidth = 2;
+      ctx.strokeRect(70, 70, 1780, 940);
+
+      // Corner decorative lines
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(40, 120); ctx.lineTo(120, 40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(1880, 120); ctx.lineTo(1800, 40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(40, 960); ctx.lineTo(120, 1040); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(1880, 960); ctx.lineTo(1800, 1040); ctx.stroke();
+
+      // 3. Draw "ESTD. 2016" above logo and FitSphere Banner Logo
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.7)'; 
+      ctx.font = 'bold 12px Outfit, sans-serif';
+      ctx.fillText('ESTD. 2016', 960, 82);
+
+      ctx.drawImage(fitsphereImg, 960 - 160, 102, 320, 80);
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // "CERTIFICATE OF COMPLETION"
+      ctx.fillStyle = '#FBBF24'; 
+      ctx.font = '900 64px Cinzel, serif';
+      ctx.fillText('CERTIFICATE OF COMPLETION', 960, 240);
+
+      ctx.fillStyle = '#9CA3AF'; 
+      ctx.font = 'italic 28px "Playfair Display", Georgia, serif';
+      ctx.fillText('This is proudly presented to', 960, 340);
+
+      // USER NAME
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 76px "Playfair Display", Georgia, serif';
+      ctx.fillText(cert.userName, 960, 440);
+
+      // Underline for name
+      ctx.strokeStyle = '#FBBF24';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(660, 495); ctx.lineTo(1260, 495); ctx.stroke();
+
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = 'italic 26px "Playfair Display", Georgia, serif';
+      ctx.fillText('for outstanding dedication and mastery of the professional program', 960, 560);
+
+      // COURSE TITLE
+      ctx.fillStyle = '#FBBF24'; 
+      ctx.font = 'bold 44px Outfit, sans-serif';
+      ctx.fillText(cert.courseTitle.toUpperCase(), 960, 645);
+
+      ctx.fillStyle = '#6B7280'; 
+      ctx.font = 'bold 18px Outfit, sans-serif';
+      ctx.fillText('EVALUATED & CERTIFIED BY THE ELITE COACHING DIVISION', 960, 715);
+
+      // 4. Draw Signatures
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = 'bold 16px Outfit, sans-serif';
+      ctx.fillText('INSTRUCTOR / PHYSIOLOGIST', 300, 900);
+      ctx.fillStyle = '#E5E7EB';
+      ctx.font = 'bold 20px Georgia, serif';
+      ctx.fillText('Dr. Muthu Saravanan', 300, 860);
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(300, 835); ctx.lineTo(550, 835); ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'; 
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(320, 825); ctx.bezierCurveTo(360, 785, 420, 845, 460, 815); ctx.stroke();
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = 'bold 16px Outfit, sans-serif';
+      ctx.fillText('DIRECTOR OF FITSPHERE', 1620, 900);
+      ctx.fillStyle = '#E5E7EB';
+      ctx.font = 'bold 20px Georgia, serif';
+      ctx.fillText('Aadhavun', 1620, 860);
+      
+      ctx.beginPath(); ctx.moveTo(1370, 835); ctx.lineTo(1620, 835); ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(184, 255, 34, 0.4)'; 
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(1390, 820); ctx.bezierCurveTo(1450, 840, 1500, 795, 1580, 825); ctx.stroke();
+
+      // 5. Seals
+      const sealX = 960;
+      const sealY = 855;
+      
+      // Left stamp
+      const leftX = 730;
+      const leftY = 855;
+      const leftR = 45;
+
+      ctx.fillStyle = '#000000';
+      ctx.beginPath(); 
+      ctx.arc(leftX, leftY, leftR, 0, Math.PI * 2); 
+      ctx.fill();
+
+      ctx.strokeStyle = '#FBBF24';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(leftX, leftY, leftR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(leftX, leftY, leftR - 1, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(fitsphereIconImg, leftX - leftR, leftY - leftR, leftR * 2, leftR * 2);
+      ctx.restore();
+
+      // Center Gold Seal Image
+      const centerR = 55;
+      ctx.fillStyle = '#000000';
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, centerR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, centerR - 1, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(goldSealImg, sealX - centerR, sealY - centerR, centerR * 2, centerR * 2);
+      ctx.restore();
+
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(sealX, sealY, centerR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Right stamp
+      const startupX = 1190;
+      const startupY = 855;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(startupX, startupY, 45, 0, Math.PI * 2); ctx.fill();
+      ctx.drawImage(startupImg, startupX - 38, startupY - 38, 76, 76);
+
+      // 6. Verification metadata
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#4B5563'; 
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText(`VERIFICATION CODE: ${cert.verificationCode}  |  ISSUED: ${new Date(cert.issueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}  |  PORTAL: FITSPHERE.COM`, 960, 985);
+
+      // 7. Get base64 JPEG and save to firestore
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      await updateDoc(certRef, { certificateImage: dataUrl });
+      console.log('Background uploaded certificate image for document:', cert.id);
+    }).catch(err => {
+      console.error('Failed to generate background certificate image:', err);
     });
   };
 
