@@ -50,6 +50,19 @@ service cloud.firestore {
         && request.resource.data.completedLessonIds is map;
     }
 
+    // Certificates (Unlocked upon 100% completion)
+    match /certificates/{certId} {
+      allow read: if true;
+      allow write: if isValidString(request.resource.data.id, 100)
+        && isValidString(request.resource.data.userEmail, 150)
+        && isValidString(request.resource.data.userName, 100)
+        && isValidString(request.resource.data.courseId, 100)
+        && isValidString(request.resource.data.courseTitle, 200)
+        && isValidString(request.resource.data.issueDate, 100)
+        && isValidString(request.resource.data.verificationCode, 100)
+        && isValidString(request.resource.data.badgeType, 50);
+    }
+
     // Payments (Logs of purchases made by users)
     match /payments/{paymentId} {
       allow read: if true;

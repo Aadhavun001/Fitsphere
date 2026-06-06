@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Course, Lesson } from '../context/AppContext';
-import { Play, CheckSquare, Square, FileText, Plus, Trash2, Award, BookOpen, MessageSquare, ExternalLink } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Play, CheckSquare, Square, FileText, Plus, Trash2, Award, BookOpen, MessageSquare, ExternalLink, Download, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, onSnapshot, setDoc, doc } from 'firebase/firestore';
@@ -45,35 +45,13 @@ export const DashboardPage: React.FC = () => {
   const [forumPosts, setForumPosts] = useState<Array<{ id: string; user: string; text: string; date: string }>>([]);
   const [newQuestion, setNewQuestion] = useState('');
 
-  if (!user) {
-    return (
-      <div className="w-full bg-bg-dark pt-40 pb-24 text-center min-h-[85vh]">
-        <div className="max-w-md mx-auto flex flex-col items-center gap-4">
-          <Award className="h-12 w-12 text-gray-500" />
-          <h2 className="text-xl font-display font-bold text-white uppercase">Please Sign In</h2>
-          <p className="text-gray-400 text-sm">Please sign in to access your learning portal, courses, and checklists.</p>
-          <Link to="/login" className="px-6 py-3 bg-brand-neon text-black font-bold rounded-full text-xs mt-4">
-            Go to Login
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // Certificate & progress update states
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [activeCert, setActiveCert] = useState<any>(null);
 
-  if (myCourses.length === 0) {
-    return (
-      <div className="w-full bg-bg-dark pt-40 pb-24 text-center min-h-[85vh]">
-        <div className="max-w-md mx-auto flex flex-col items-center gap-4">
-          <Award className="h-12 w-12 text-gray-500" />
-          <h2 className="text-xl font-display font-bold text-white uppercase">Learning Portal Empty</h2>
-          <p className="text-gray-400 text-sm">You have not purchased any courses yet. Please browse our training catalog to unlock your portal.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const activeCourse = selectedCourse || myCourses[0];
-  const activeLesson = selectedLesson || activeCourse.curriculum[0]?.lessons[0];
+  const activeCourse = selectedCourse || myCourses[0] || null;
+  const activeLesson = selectedLesson || (activeCourse ? activeCourse.curriculum[0]?.lessons[0] : null) || null;
 
   // Subscribe to Q&A Forum posts dynamically
   useEffect(() => {
@@ -119,15 +97,250 @@ export const DashboardPage: React.FC = () => {
   }, [activeCourse?.id]);
 
   // Calculate progress
-  const totalLessonsCount = activeCourse.curriculum.reduce((acc, sec) => acc + sec.lessons.length, 0);
-  const completedCount = (completedLessonIds[activeCourse.id] || []).length;
+  const totalLessonsCount = activeCourse ? activeCourse.curriculum.reduce((acc, sec) => acc + (sec.lessons || []).length, 0) : 0;
+  const completedCount = activeCourse ? (completedLessonIds[activeCourse.id] || []).length : 0;
   const progressPercent = totalLessonsCount > 0 ? Math.round((completedCount / totalLessonsCount) * 100) : 0;
   const isCourseCompleted = progressPercent === 100;
 
+  // Helper to trigger custom toast notifications
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // Sync active certificate from Firestore if the course is completed
+  useEffect(() => {
+    if (isCourseCompleted && user?.email && activeCourse) {
+      const userEmail = user.email.toLowerCase();
+      const certId = `${userEmail}_${activeCourse.id}`;
+      const certRef = doc(db, 'certificates', certId);
+
+      const unsubscribe = onSnapshot(certRef, (snap) => {
+        if (snap.exists()) {
+          setActiveCert(snap.data());
+        } else {
+          // Auto-generate certificate doc on the fly if completed but doc is missing
+          const verificationCode = `FS-${activeCourse.id.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+          const newCert = {
+            id: certId,
+            userEmail: userEmail,
+            userName: user.name,
+            courseId: activeCourse.id,
+            courseTitle: activeCourse.title,
+            issueDate: new Date().toISOString(),
+            verificationCode: verificationCode,
+            badgeType: 'Gold'
+          };
+          setDoc(certRef, newCert)
+            .then(() => setActiveCert(newCert))
+            .catch(err => console.error('Failed to create missing certificate:', err));
+        }
+      });
+      return () => unsubscribe();
+    } else {
+      setActiveCert(null);
+    }
+  }, [isCourseCompleted, user?.email, activeCourse?.id]);
+
+  // Canvas Generation for high-resolution download
+  const downloadCertificateAsPNG = () => {
+    if (!activeCert || !user || !activeCourse) return;
+
+    // Create high-res canvas (1920x1080) for high quality print
+    const canvas = document.createElement('canvas');
+    canvas.width = 1920;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // 1. Draw Background (Charcoal radial gradient)
+    const grad = ctx.createRadialGradient(960, 540, 50, 960, 540, 1100);
+    grad.addColorStop(0, '#111827'); 
+    grad.addColorStop(1, '#030712'); 
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    // Decorative corner patterns or ambient border glow
+    const glowGrad = ctx.createRadialGradient(960, 540, 10, 960, 540, 600);
+    glowGrad.addColorStop(0, 'rgba(217, 119, 6, 0.05)'); 
+    glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, 1920, 1080);
+
+    // 2. Double gold border
+    ctx.strokeStyle = '#D97706'; 
+    ctx.lineWidth = 6;
+    ctx.strokeRect(50, 50, 1820, 980);
+
+    ctx.strokeStyle = '#FBBF24'; 
+    ctx.lineWidth = 2;
+    ctx.strokeRect(70, 70, 1780, 940);
+
+    // Corner decorative lines
+    ctx.strokeStyle = '#D97706';
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(40, 120); ctx.lineTo(120, 40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(1880, 120); ctx.lineTo(1800, 40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(40, 960); ctx.lineTo(120, 1040); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(1880, 960); ctx.lineTo(1800, 1040); ctx.stroke();
+
+    // 3. Draw Header text
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.fillStyle = '#10B981'; 
+    ctx.font = 'bold 22px Outfit, sans-serif';
+    ctx.fillText('FITSPHERE ATHLETIC PORTAL', 960, 150);
+
+    ctx.fillStyle = '#FBBF24'; 
+    ctx.font = '900 64px Cinzel, serif';
+    ctx.fillText('CERTIFICATE OF COMPLETION', 960, 240);
+
+    ctx.fillStyle = '#9CA3AF'; 
+    ctx.font = 'italic 28px "Playfair Display", Georgia, serif';
+    ctx.fillText('This is proudly presented to', 960, 340);
+
+    // USER NAME
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 76px "Playfair Display", Georgia, serif';
+    ctx.fillText(activeCert.userName, 960, 440);
+
+    // Underline for name
+    ctx.strokeStyle = '#FBBF24';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(660, 495); ctx.lineTo(1260, 495); ctx.stroke();
+
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = 'italic 26px "Playfair Display", Georgia, serif';
+    ctx.fillText('for outstanding dedication and mastery of the professional program', 960, 560);
+
+    // COURSE TITLE (Professional text)
+    ctx.fillStyle = '#FBBF24'; 
+    ctx.font = 'bold 44px Outfit, sans-serif';
+    ctx.fillText(activeCert.courseTitle.toUpperCase(), 960, 645);
+
+    ctx.fillStyle = '#6B7280'; 
+    ctx.font = 'bold 18px Outfit, sans-serif';
+    ctx.fillText('EVALUATED & CERTIFIED BY THE ELITE COACHING DIVISION', 960, 715);
+
+    // 4. Draw Signatures
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = 'bold 16px Outfit, sans-serif';
+    ctx.fillText('INSTRUCTOR / PHYSIOLOGIST', 300, 900);
+    ctx.fillStyle = '#E5E7EB';
+    ctx.font = 'bold 20px Georgia, serif';
+    ctx.fillText('Dr. Muthu Saravanan', 300, 860);
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(300, 835); ctx.lineTo(550, 835); ctx.stroke();
+    
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'; 
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(320, 825); ctx.bezierCurveTo(360, 785, 420, 845, 460, 815); ctx.stroke();
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.font = 'bold 16px Outfit, sans-serif';
+    ctx.fillText('DIRECTOR OF FITSPHERE', 1620, 900);
+    ctx.fillStyle = '#E5E7EB';
+    ctx.font = 'bold 20px Georgia, serif';
+    ctx.fillText('Aadhavun', 1620, 860);
+    
+    ctx.beginPath(); ctx.moveTo(1370, 835); ctx.lineTo(1620, 835); ctx.stroke();
+    
+    ctx.strokeStyle = 'rgba(184, 255, 34, 0.4)'; 
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(1390, 820); ctx.bezierCurveTo(1450, 840, 1500, 795, 1580, 825); ctx.stroke();
+
+    // 5. Draw Seals (MSME, Gold badge, Startup India)
+    const sealX = 960;
+    const sealY = 855;
+    
+    // Center Gold Seal Rosette
+    ctx.fillStyle = '#D97706'; 
+    ctx.beginPath();
+    for (let i = 0; i < 30; i++) {
+      const angle = (i * Math.PI * 2) / 30;
+      const r = i % 2 === 0 ? 55 : 45;
+      ctx.lineTo(sealX + Math.cos(angle) * r, sealY + Math.sin(angle) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#FBBF24'; 
+    ctx.beginPath(); ctx.arc(sealX, sealY, 42, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#D97706';
+    ctx.beginPath(); ctx.arc(sealX, sealY, 38, 0, Math.PI * 2); ctx.fill();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#FBBF24';
+    ctx.font = 'bold 10px Outfit, sans-serif';
+    ctx.fillText('FITSPHERE', sealX, sealY - 8);
+    ctx.font = 'bold 9px Outfit, sans-serif';
+    ctx.fillText('GOLD SEAL', sealX, sealY + 4);
+    ctx.font = '900 8px Outfit, sans-serif';
+    ctx.fillText('GRADUATE', sealX, sealY + 14);
+
+    // Left stamp: MSME Registration
+    const msmeX = 730;
+    const msmeY = 855;
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.7)'; 
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(msmeX, msmeY, 45, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(msmeX, msmeY, 39, 0, Math.PI * 2); ctx.stroke();
+    
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.8)';
+    ctx.font = 'bold 9px Outfit, sans-serif';
+    ctx.fillText('REGISTERED', msmeX, msmeY - 14);
+    ctx.font = 'bold 11px Outfit, sans-serif';
+    ctx.fillText('MSME', msmeX, msmeY);
+    ctx.font = 'bold 8px Outfit, sans-serif';
+    ctx.fillText('GOVT. OF INDIA', msmeX, msmeY + 12);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(msmeX, msmeY, 18, 0, Math.PI*2); ctx.stroke();
+
+    // Right stamp: Startup India
+    const startupX = 1190;
+    const startupY = 855;
+    ctx.strokeStyle = 'rgba(217, 119, 6, 0.7)'; 
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(startupX, startupY, 45, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(startupX, startupY, 39, 0, Math.PI * 2); ctx.stroke();
+    
+    ctx.fillStyle = 'rgba(217, 119, 6, 0.8)';
+    ctx.font = 'bold 9px Outfit, sans-serif';
+    ctx.fillText('STARTUP INDIA', startupX, startupY - 14);
+    ctx.font = 'bold 11px Outfit, sans-serif';
+    ctx.fillText('RECOGNIZED', startupX, startupY);
+    ctx.font = 'bold 8px Outfit, sans-serif';
+    ctx.fillText('GOVT. OF INDIA', startupX, startupY + 12);
+    ctx.font = '10px sans-serif';
+    ctx.fillText('★', startupX, startupY + 22);
+
+    // 6. Verification metadata
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#4B5563'; 
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(`VERIFICATION CODE: ${activeCert.verificationCode}  |  ISSUED: ${new Date(activeCert.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}  |  PORTAL: FITSPHERE.COM`, 960, 1025);
+
+    // 7. Trigger download
+    const dataUrl = canvas.toDataURL('image/png');
+    const link = document.createElement('a');
+    const filename = `${user.name.replace(/\s+/g, '_')}_${activeCourse.title.replace(/\s+/g, '_')}_Certificate.png`;
+    link.download = filename;
+    link.href = dataUrl;
+    link.click();
+  };
+
   // Fetch notes for active lesson
-  const activeLessonNotes = userNotes.filter(
-    (note) => note.courseId === activeCourse.id && note.lessonId === activeLesson?.id
-  );
+  const activeLessonNotes = activeCourse && activeLesson ? userNotes.filter(
+    (note) => note.courseId === activeCourse.id && note.lessonId === activeLesson.id
+  ) : [];
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,6 +383,33 @@ export const DashboardPage: React.FC = () => {
     setSelectedLesson(getFirstLesson(course));
     setIsPlaying(false);
   };
+
+  if (!user) {
+    return (
+      <div className="w-full bg-bg-dark pt-40 pb-24 text-center min-h-[85vh]">
+        <div className="max-w-md mx-auto flex flex-col items-center gap-4">
+          <Award className="h-12 w-12 text-gray-500" />
+          <h2 className="text-xl font-display font-bold text-white uppercase">Please Sign In</h2>
+          <p className="text-gray-400 text-sm">Please sign in to access your learning portal, courses, and checklists.</p>
+          <Link to="/login" className="px-6 py-3 bg-brand-neon text-black font-bold rounded-full text-xs mt-4">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (myCourses.length === 0) {
+    return (
+      <div className="w-full bg-bg-dark pt-40 pb-24 text-center min-h-[85vh]">
+        <div className="max-w-md mx-auto flex flex-col items-center gap-4">
+          <Award className="h-12 w-12 text-gray-500" />
+          <h2 className="text-xl font-display font-bold text-white uppercase">Learning Portal Empty</h2>
+          <p className="text-gray-400 text-sm">You have not purchased any courses yet. Please browse our training catalog to unlock your portal.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full bg-bg-dark pt-24 min-h-screen text-left flex flex-col lg:flex-row">
@@ -235,13 +475,16 @@ export const DashboardPage: React.FC = () => {
             
             {/* Dynamic circular certificate button if completed */}
             {isCourseCompleted ? (
-              <div className="flex items-center gap-3 bg-brand-cyan/15 border border-brand-cyan/20 px-4 py-2 rounded-2xl w-fit">
-                <Award className="h-5 w-5 text-brand-cyan" />
+              <button 
+                onClick={() => setShowCertModal(true)}
+                className="flex items-center gap-3 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 border border-yellow-500/30 px-5 py-2.5 rounded-2xl w-fit cursor-pointer transition-all duration-300 group hover:scale-[1.02] shadow-[0_0_15px_rgba(245,158,11,0.15)] text-left"
+              >
+                <Award className="h-5 w-5 text-yellow-400 animate-pulse group-hover:scale-110 transition-transform" />
                 <div className="text-left text-xs">
-                  <div className="text-white font-bold">Certificate Unlocked</div>
-                  <button className="text-brand-cyan font-bold hover:underline text-[10px]">Download PDF</button>
+                  <div className="text-white font-bold group-hover:text-yellow-400 transition-colors">Certificate Unlocked</div>
+                  <span className="text-yellow-400 font-bold text-[10px] uppercase tracking-wider block">🏆 View Gold Certificate</span>
                 </div>
-              </div>
+              </button>
             ) : (
               <div className="text-right">
                 <span className="text-[10px] text-gray-500 font-bold block uppercase">Course Progress</span>
@@ -258,6 +501,13 @@ export const DashboardPage: React.FC = () => {
                 controls
                 autoPlay
                 className="w-full h-full object-cover"
+                onEnded={() => {
+                  const isLessonCompleted = (completedLessonIds[activeCourse.id] || []).includes(activeLesson.id);
+                  if (!isLessonCompleted) {
+                    toggleLessonCompleted(activeCourse.id, activeLesson.id);
+                    triggerToast(`🎉 Lesson "${activeLesson.title}" completed! Progress updated.`);
+                  }
+                }}
               />
             ) : (
               <div 
@@ -279,6 +529,50 @@ export const DashboardPage: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* VIDEO CONTROLS & COMPLETION STATUS BAR */}
+          {activeLesson && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl glass-card border border-white/10 shadow-xl bg-white/[0.02] backdrop-blur-md">
+              <div className="text-left">
+                <span className="text-[10px] text-brand-cyan font-bold uppercase tracking-wider block">
+                  Now Studying: {activeCourse.curriculum.find(sec => sec.lessons.some(l => l.id === activeLesson.id))?.title || 'Active Unit'}
+                </span>
+                <h4 className="font-display font-bold text-white text-base sm:text-lg leading-tight mt-0.5">
+                  {activeLesson.title}
+                </h4>
+                <span className="text-xs text-gray-400 font-mono block mt-1">
+                  Duration: {activeLesson.duration}
+                </span>
+              </div>
+
+              <button
+                onClick={() => {
+                  toggleLessonCompleted(activeCourse.id, activeLesson.id);
+                  const isCompletedNow = !(completedLessonIds[activeCourse.id] || []).includes(activeLesson.id);
+                  if (isCompletedNow) {
+                    triggerToast(`🎉 Lesson "${activeLesson.title}" marked as complete!`);
+                  }
+                }}
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-md ${
+                  (completedLessonIds[activeCourse.id] || []).includes(activeLesson.id)
+                    ? 'bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan shadow-[0_0_15px_rgba(34,221,255,0.15)] hover:bg-brand-cyan/30'
+                    : 'bg-brand-neon text-black hover:scale-[1.02] shadow-[0_0_15px_rgba(184,255,34,0.15)] hover:shadow-[0_0_20px_rgba(184,255,34,0.25)]'
+                }`}
+              >
+                {(completedLessonIds[activeCourse.id] || []).includes(activeLesson.id) ? (
+                  <>
+                    <CheckSquare className="h-4 w-4" />
+                    Completed
+                  </>
+                ) : (
+                  <>
+                    <Square className="h-4 w-4" />
+                    Mark as Complete
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           {/* TABBED INTERACTION INTERFACES */}
           <div className="flex flex-col gap-6">
@@ -490,6 +784,198 @@ export const DashboardPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-6 right-6 z-50 bg-[#121926] border border-brand-cyan/20 p-4 rounded-2xl shadow-[0_4px_20px_rgba(0,245,160,0.15)] flex items-center gap-3 text-xs max-w-sm"
+          >
+            <span className="text-xl">🏆</span>
+            <div className="text-left">
+              <p className="text-white font-bold">Progress Updated</p>
+              <p className="text-gray-400 mt-0.5">{toastMessage}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Gold Completion Certificate Modal */}
+      <AnimatePresence>
+        {showCertModal && activeCert && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="relative w-full max-w-4xl bg-bg-dark border border-white/10 rounded-3xl overflow-hidden shadow-2xl p-6 md:p-8 flex flex-col gap-6"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowCertModal(false)}
+                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <X className="h-4.5 w-4.5" />
+              </button>
+
+              {/* Modal Header */}
+              <div className="text-left">
+                <h3 className="text-xl font-display font-black text-white uppercase tracking-tight">
+                  Your Course Achievement
+                </h3>
+                <p className="text-xs text-gray-400 uppercase tracking-widest font-bold mt-1">
+                  FitSphere Elite Program Graduate
+                </p>
+              </div>
+
+              {/* Certificate Canvas / HTML Preview Container */}
+              <div className="w-full overflow-x-auto scrollbar-none py-2">
+                {/* HTML Certificate Preview */}
+                <div 
+                  id="fitsphere-certificate-preview"
+                  className="min-w-[760px] aspect-[16/9] bg-gradient-to-tr from-gray-900 to-slate-950 border-[5px] border-amber-600 rounded-2xl p-8 relative flex flex-col items-center justify-between shadow-2xl overflow-hidden text-center select-none"
+                  style={{
+                    boxShadow: '0 0 40px rgba(245, 158, 11, 0.1)',
+                  }}
+                >
+                  {/* Subtle inner gold border */}
+                  <div className="absolute inset-1.5 border border-yellow-400/50 rounded-xl pointer-events-none" />
+
+                  {/* Corner Accents */}
+                  <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-yellow-500" />
+                  <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-yellow-500" />
+                  <div className="absolute bottom-2 left-2 w-6 h-6 border-b-2 border-l-2 border-yellow-500" />
+                  <div className="absolute bottom-2 right-2 w-6 h-6 border-b-2 border-r-2 border-yellow-500" />
+
+                  {/* Top: Logo & Title */}
+                  <div className="flex flex-col items-center gap-1 mt-2">
+                    {/* Dumbbell Icon styled */}
+                    <div className="flex items-center gap-2">
+                      <div className="bg-brand-cyan/20 px-2.5 py-1 rounded-lg border border-brand-cyan/30 text-brand-cyan">
+                        <span className="text-sm font-bold tracking-tighter">FITSPHERE</span>
+                      </div>
+                      <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Estd. 2026</span>
+                    </div>
+                    <h1 className="text-2xl font-black text-yellow-400 tracking-widest uppercase mt-3" style={{ fontFamily: 'Cinzel, serif' }}>
+                      Certificate of Completion
+                    </h1>
+                    <p className="text-[11px] text-gray-400 italic" style={{ fontFamily: 'Playfair Display, serif' }}>
+                      This is proudly presented to
+                    </p>
+                  </div>
+
+                  {/* Middle: Student & Course */}
+                  <div className="flex flex-col items-center gap-2">
+                    <h2 className="text-4xl font-extrabold text-white italic tracking-wide" style={{ fontFamily: 'Playfair Display, serif' }}>
+                      {activeCert.userName}
+                    </h2>
+                    <div className="w-80 h-[2px] bg-gradient-to-r from-transparent via-yellow-400 to-transparent" />
+                    <p className="text-[11px] text-gray-400 italic" style={{ fontFamily: 'Playfair Display, serif' }}>
+                      for outstanding dedication and mastery of the professional program
+                    </p>
+                    <h3 className="text-xl font-black text-yellow-400 font-sans tracking-wide uppercase mt-1">
+                      {activeCert.courseTitle}
+                    </h3>
+                    <p className="text-[9px] text-gray-500 font-semibold tracking-wider uppercase">
+                      Evaluated & Certified by the Elite Coaching Division
+                    </p>
+                  </div>
+
+                  {/* Bottom: Signatures, Stamps, Metadata */}
+                  <div className="w-full flex items-end justify-between px-6 mb-2">
+                    {/* Instructor Signature */}
+                    <div className="flex flex-col items-center w-48 text-[9px] text-gray-500">
+                      {/* Placeholder cursive signature using path */}
+                      <svg className="w-24 h-8 text-brand-cyan/50 stroke-current fill-none stroke-2 -mb-1" viewBox="0 0 100 30">
+                        <path d="M10,20 Q25,5 40,25 T70,10 T90,20" stroke="currentColor" fill="none" strokeWidth={2} />
+                      </svg>
+                      <div className="w-full h-[1px] bg-white/10 mb-1" />
+                      <span className="text-white font-bold">Dr. Muthu Saravanan</span>
+                      <span>Instructor / Physiologist</span>
+                    </div>
+
+                    {/* Three Seals in the Center */}
+                    <div className="flex items-center gap-4 -mb-2">
+                      {/* MSME Stamp */}
+                      <div className="w-14 h-14 rounded-full border-2 border-emerald-500/40 flex flex-col items-center justify-center p-1 text-[5px] text-emerald-500/70 font-bold bg-emerald-950/20 shadow-[0_0_10px_rgba(16,185,129,0.05)]">
+                        <span>REGISTERED</span>
+                        <span className="text-[7px] font-black text-emerald-500/90 leading-none my-0.5">MSME</span>
+                        <span>GOVT. OF INDIA</span>
+                      </div>
+
+                      {/* Golden Graduate Badge (Interactive) */}
+                      <motion.div
+                        whileHover={{ scale: 1.08, rotateY: 18, rotateX: 18 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                        className="w-18 h-18 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-300 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex items-center justify-center cursor-pointer border border-amber-500"
+                        style={{ transformStyle: 'preserve-3d' }}
+                      >
+                        <div className="w-full h-full rounded-full bg-amber-950/90 border border-amber-500 flex flex-col items-center justify-center text-center p-1 relative overflow-hidden group">
+                          {/* Shine effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                          <span className="text-[7px] text-yellow-400 font-extrabold uppercase leading-none">FitSphere</span>
+                          <span className="text-[7px] text-yellow-300 font-black uppercase tracking-wider my-0.5">Gold Seal</span>
+                          <span className="text-[6px] text-white font-bold uppercase leading-none">Graduate</span>
+                        </div>
+                      </motion.div>
+
+                      {/* Startup India Stamp */}
+                      <div className="w-14 h-14 rounded-full border-2 border-amber-600/40 flex flex-col items-center justify-center p-1 text-[5px] text-amber-600/70 font-bold bg-amber-950/20 shadow-[0_0_10px_rgba(217,119,6,0.05)]">
+                        <span>STARTUP INDIA</span>
+                        <span className="text-[7px] font-black text-amber-600/90 leading-none my-0.5">RECOGNIZED</span>
+                        <span>GOVT. OF INDIA</span>
+                      </div>
+                    </div>
+
+                    {/* Director Signature */}
+                    <div className="flex flex-col items-center w-48 text-[9px] text-gray-500">
+                      <svg className="w-24 h-8 text-brand-neon/50 stroke-current fill-none stroke-2 -mb-1" viewBox="0 0 100 30">
+                        <path d="M15,15 Q35,25 50,10 T85,20 T95,15" stroke="currentColor" fill="none" strokeWidth={2} />
+                      </svg>
+                      <div className="w-full h-[1px] bg-white/10 mb-1" />
+                      <span className="text-white font-bold">Aadhavun</span>
+                      <span>Director of FitSphere</span>
+                    </div>
+                  </div>
+
+                  {/* Security Verification footer */}
+                  <div className="absolute bottom-1 w-full text-[7px] text-gray-600 font-mono flex items-center justify-center gap-1.5">
+                    <span>VERIFICATION CODE: {activeCert.verificationCode}</span>
+                    <span>|</span>
+                    <span>ISSUED: {new Date(activeCert.issueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-white/5">
+                <button
+                  onClick={() => setShowCertModal(false)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-full bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={downloadCertificateAsPNG}
+                  className="w-full sm:w-auto px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-black text-xs font-black uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Download className="h-4 w-4 stroke-[2.5]" />
+                  Download Certificate (PNG)
+                </button>
+              </div>
+
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

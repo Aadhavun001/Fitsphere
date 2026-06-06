@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { Dumbbell, Mail, Lock, Sparkles, AlertCircle } from 'lucide-react';
+import { Dumbbell, Mail, Lock, AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useApp();
@@ -161,11 +161,6 @@ export const LoginPage: React.FC = () => {
                 </span>
               )}
             </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
-            <Sparkles className="h-4 w-4 text-brand-cyan" />
-            <span>Mock login session activated. Use any test credentials.</span>
           </div>
 
         </div>

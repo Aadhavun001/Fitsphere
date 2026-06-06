@@ -912,6 +912,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateDoc(doc(db, 'users', userEmail), {
         completedLessonIds: nextCompletedLessonIds
       }).catch(err => console.warn('Failed to sync lesson completion to Firestore:', err));
+
+      // Automatically generate certificate if the course is 100% completed
+      const course = courses.find(c => c.id === courseId);
+      if (course) {
+        const totalLessons = course.curriculum.reduce((acc, sec) => acc + (sec.lessons || []).length, 0);
+        if (updated.length === totalLessons && totalLessons > 0) {
+          const certId = `${userEmail}_${courseId}`;
+          const verificationCode = `FS-${courseId.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+          
+          setDoc(doc(db, 'certificates', certId), {
+            id: certId,
+            userEmail: userEmail,
+            userName: user.name,
+            courseId: courseId,
+            courseTitle: course.title,
+            issueDate: new Date().toISOString(),
+            verificationCode: verificationCode,
+            badgeType: 'Gold'
+          }).then(() => {
+            console.log('Certificate created in Firestore:', certId);
+          }).catch(err => console.error('Failed to save certificate to Firestore:', err));
+        }
+      }
     }
   };
 
