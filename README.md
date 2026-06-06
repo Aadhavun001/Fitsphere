@@ -9,7 +9,7 @@
 
 FitSphere is a state-of-the-art web application designed to sell and deliver high-end, science-backed fitness training courses. Modeled after elite performance trackers (like *WHOOP*, *Apple Fitness+*, and *Gymshark*), the platform boasts a premium, high-performance dark theme UI, subtle glow aesthetics, responsive flex snapping, and dynamic Firestore-driven content management.
 
-> 🌐 **Live Vercel Deployment Link**: **[https://fitsphere-app-60e5f.vercel.app](https://fitsphere-app-60e5f.vercel.app)** *(Replace with your actual production URL)*
+> 🌐 **Live Vercel Deployment Link**: fitsphere1.vercel.app
 
 ---
 
