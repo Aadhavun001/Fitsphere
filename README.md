@@ -143,5 +143,5 @@ All routes are client-side managed using `react-router-dom` in `frontend/src/App
 3. Set the **Root Directory** settings to **`frontend`**.
 4. Add all environment variables listed in the *Frontend Setup* step under **Environment Variables** in the Vercel project panel:
    - Include `VITE_FIREBASE_...` keys.
-   - Add **`VITE_API_URL`** set to your hosted Render backend service URL: `https://fitsphere-backend.onrender.com`.
+   - Add **`VITE_API_URL`** set to your hosted Render backend service URL: `https://fitsphere-backend-8vxz.onrender.com`.
 5. Click **Deploy**. Vercel will automatically compile the static code and serve it via global Edge networks!
