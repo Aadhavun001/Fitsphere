@@ -32,7 +32,7 @@ export const CourseDetailPage: React.FC = () => {
 
   const handleCartAction = () => {
     if (isOwned) {
-      navigate('/dashboard');
+      navigate(`/dashboard?courseId=${course.id}`);
     } else if (isCarted) {
       navigate('/cart');
     } else {

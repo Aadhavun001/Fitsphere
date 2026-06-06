@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import type { Course, Lesson } from '../context/AppContext';
 import { Play, CheckSquare, Square, FileText, Plus, Trash2, Award, BookOpen, MessageSquare, ExternalLink, Download, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, onSnapshot, setDoc, doc, updateDoc } from 'firebase/firestore';
 
@@ -20,7 +20,12 @@ export const DashboardPage: React.FC = () => {
   } = useApp();
 
   const myCourses = courses.filter((c) => purchasedCourseIds.includes(c.id));
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(myCourses[0] || null);
+  
+  const [searchParams] = useSearchParams();
+  const courseIdParam = searchParams.get('courseId');
+  
+  const initialCourse = (courseIdParam && myCourses.find(c => c.id === courseIdParam)) || myCourses[0] || null;
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(initialCourse);
   
   // Find first uncompleted lesson, or default to first lesson
   const getFirstLesson = (course: Course | null) => {
@@ -34,9 +39,21 @@ export const DashboardPage: React.FC = () => {
     return course.curriculum[0]?.lessons[0] || null;
   };
 
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(getFirstLesson(myCourses[0]));
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(getFirstLesson(initialCourse));
   const [noteText, setNoteText] = useState('');
   const [activeTab, setActiveTab] = useState<'resources' | 'notes' | 'forum'>('resources');
+
+  // Synchronize URL query parameter updates
+  useEffect(() => {
+    if (courseIdParam) {
+      const matched = myCourses.find(c => c.id === courseIdParam);
+      if (matched && (!selectedCourse || selectedCourse.id !== courseIdParam)) {
+        setSelectedCourse(matched);
+        setSelectedLesson(getFirstLesson(matched));
+        setIsPlaying(false);
+      }
+    }
+  }, [courseIdParam, myCourses]);
   
   // Custom video player play status
   const [isPlaying, setIsPlaying] = useState(false);

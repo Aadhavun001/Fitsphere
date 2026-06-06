@@ -1032,7 +1032,7 @@ export const ProfilePage: React.FC = () => {
                         </div>
                         
                         <Link
-                          to="/dashboard"
+                          to={`/dashboard?courseId=${course.id}`}
                           className="w-full sm:w-auto px-5 py-3 rounded-full bg-brand-neon text-black font-extrabold text-xs text-center flex items-center justify-center gap-1.5 hover:scale-[1.03] transition-transform"
                         >
                           Launch Portal

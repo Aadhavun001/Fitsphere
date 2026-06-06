@@ -416,7 +416,7 @@ export const CheckoutPage: React.FC = () => {
                   </div>
 
                   <Link
-                    to="/dashboard"
+                    to={purchasedItems.length === 1 ? `/dashboard?courseId=${purchasedItems[0].course.id}` : "/dashboard"}
                     className="px-8 py-4 rounded-full bg-brand-neon text-black font-extrabold text-sm hover:scale-[1.03] transition-transform shadow-[0_0_20px_rgba(184,255,34,0.15)]"
                   >
                     Enter Learning Portal

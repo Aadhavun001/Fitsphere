@@ -187,7 +187,7 @@ export const CoursesPage: React.FC = () => {
 
                             {isOwned ? (
                               <Link
-                                  to="/dashboard"
+                                  to={`/dashboard?courseId=${course.id}`}
                                   className="px-3.5 py-2 rounded-full bg-brand-cyan/20 border border-brand-cyan/20 text-brand-cyan text-xs font-bold hover:bg-brand-cyan hover:text-black transition-all duration-200"
                               >
                                 View Portal
