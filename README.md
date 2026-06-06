@@ -5,11 +5,11 @@
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Vite v8](https://img.shields.io/badge/Vite_v8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
 [![Firebase Firestore](https://img.shields.io/badge/Firebase_Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
-[![Vercel Deployment](https://img.shields.io/badge/Vercel_Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://fitsphere-app-60e5f.vercel.app)
+[![Vercel Deployment](https://img.shields.io/badge/Vercel_Deployed-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://fitsphere1.vercel.app)
 
 FitSphere is a state-of-the-art web application designed to sell and deliver high-end, science-backed fitness training courses. Modeled after elite performance trackers (like *WHOOP*, *Apple Fitness+*, and *Gymshark*), the platform boasts a premium, high-performance dark theme UI, subtle glow aesthetics, responsive flex snapping, and dynamic Firestore-driven content management.
 
-> 🌐 **Live Vercel Deployment Link**: fitsphere1.vercel.app
+> 🌐 **Live Vercel Deployment Link**: **[https://fitsphere1.vercel.app](https://fitsphere1.vercel.app)**
 
 ---
 
