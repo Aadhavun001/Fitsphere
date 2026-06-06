@@ -7,7 +7,6 @@ import {
   Award,
   Users,
   Target,
-  Sparkles,
   ChevronDown,
   ArrowUpRight,
   Star,
@@ -126,10 +125,9 @@ export const LandingPage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           <div className="lg:col-span-7 flex flex-col gap-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 w-fit">
-              <Sparkles className="h-4 w-4 text-brand-neon" />
-              <span className="text-xs font-semibold tracking-wider text-white uppercase">Science-Backed Performance Portal</span>
-            </div>
+            <span className="text-brand-neon font-bold tracking-widest uppercase text-sm">
+              Science-Backed Performance Portal
+            </span>
             
             <h1 className="font-display font-black text-5xl sm:text-6xl xl:text-7.5xl text-white tracking-tight leading-[1.05] uppercase">
               Rewrite Your <br />
