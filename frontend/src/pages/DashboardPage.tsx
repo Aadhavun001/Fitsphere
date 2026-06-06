@@ -146,195 +146,190 @@ export const DashboardPage: React.FC = () => {
   const downloadCertificateAsPNG = () => {
     if (!activeCert || !user || !activeCourse) return;
 
-    // Create high-res canvas (1920x1080) for high quality print
-    const canvas = document.createElement('canvas');
-    canvas.width = 1920;
-    canvas.height = 1080;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    // Helper to load images asynchronously
+    const loadImage = (src: string): Promise<HTMLImageElement> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(e);
+        img.src = src;
+      });
+    };
 
-    // 1. Draw Background (Charcoal radial gradient)
-    const grad = ctx.createRadialGradient(960, 540, 50, 960, 540, 1100);
-    grad.addColorStop(0, '#111827'); 
-    grad.addColorStop(1, '#030712'); 
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1920, 1080);
+    // Load all three logos before drawing
+    Promise.all([
+      loadImage('/msme_logo.png'),
+      loadImage('/startup_india_logo.png'),
+      loadImage('/fitsphere_logo.png')
+    ]).then(([msmeImg, startupImg, fitsphereImg]) => {
+      // Create high-res canvas (1920x1080) for high quality print
+      const canvas = document.createElement('canvas');
+      canvas.width = 1920;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    // Decorative corner patterns or ambient border glow
-    const glowGrad = ctx.createRadialGradient(960, 540, 10, 960, 540, 600);
-    glowGrad.addColorStop(0, 'rgba(217, 119, 6, 0.05)'); 
-    glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(0, 0, 1920, 1080);
+      // 1. Draw Background (Charcoal radial gradient)
+      const grad = ctx.createRadialGradient(960, 540, 50, 960, 540, 1100);
+      grad.addColorStop(0, '#111827'); 
+      grad.addColorStop(1, '#030712'); 
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1920, 1080);
 
-    // 2. Double gold border
-    ctx.strokeStyle = '#D97706'; 
-    ctx.lineWidth = 6;
-    ctx.strokeRect(50, 50, 1820, 980);
+      // Decorative corner patterns or ambient border glow
+      const glowGrad = ctx.createRadialGradient(960, 540, 10, 960, 540, 600);
+      glowGrad.addColorStop(0, 'rgba(217, 119, 6, 0.05)'); 
+      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, 1920, 1080);
 
-    ctx.strokeStyle = '#FBBF24'; 
-    ctx.lineWidth = 2;
-    ctx.strokeRect(70, 70, 1780, 940);
+      // 2. Double gold border
+      ctx.strokeStyle = '#D97706'; 
+      ctx.lineWidth = 6;
+      ctx.strokeRect(50, 50, 1820, 980);
 
-    // Corner decorative lines
-    ctx.strokeStyle = '#D97706';
-    ctx.lineWidth = 4;
-    ctx.beginPath(); ctx.moveTo(40, 120); ctx.lineTo(120, 40); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(1880, 120); ctx.lineTo(1800, 40); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(40, 960); ctx.lineTo(120, 1040); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(1880, 960); ctx.lineTo(1800, 1040); ctx.stroke();
+      ctx.strokeStyle = '#FBBF24'; 
+      ctx.lineWidth = 2;
+      ctx.strokeRect(70, 70, 1780, 940);
 
-    // 3. Draw Header text
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+      // Corner decorative lines
+      ctx.strokeStyle = '#D97706';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(40, 120); ctx.lineTo(120, 40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(1880, 120); ctx.lineTo(1800, 40); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(40, 960); ctx.lineTo(120, 1040); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(1880, 960); ctx.lineTo(1800, 1040); ctx.stroke();
 
-    ctx.fillStyle = '#10B981'; 
-    ctx.font = 'bold 22px Outfit, sans-serif';
-    ctx.fillText('FITSPHERE ATHLETIC PORTAL', 960, 150);
+      // 3. Draw FitSphere Banner Logo (centered at x=960, y=140 with width 320 and height 80)
+      ctx.drawImage(fitsphereImg, 960 - 160, 100, 320, 80);
 
-    ctx.fillStyle = '#FBBF24'; 
-    ctx.font = '900 64px Cinzel, serif';
-    ctx.fillText('CERTIFICATE OF COMPLETION', 960, 240);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
 
-    ctx.fillStyle = '#9CA3AF'; 
-    ctx.font = 'italic 28px "Playfair Display", Georgia, serif';
-    ctx.fillText('This is proudly presented to', 960, 340);
+      // "CERTIFICATE OF COMPLETION"
+      ctx.fillStyle = '#FBBF24'; 
+      ctx.font = '900 64px Cinzel, serif';
+      ctx.fillText('CERTIFICATE OF COMPLETION', 960, 240);
 
-    // USER NAME
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '900 76px "Playfair Display", Georgia, serif';
-    ctx.fillText(activeCert.userName, 960, 440);
+      ctx.fillStyle = '#9CA3AF'; 
+      ctx.font = 'italic 28px "Playfair Display", Georgia, serif';
+      ctx.fillText('This is proudly presented to', 960, 340);
 
-    // Underline for name
-    ctx.strokeStyle = '#FBBF24';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(660, 495); ctx.lineTo(1260, 495); ctx.stroke();
+      // USER NAME
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 76px "Playfair Display", Georgia, serif';
+      ctx.fillText(activeCert.userName, 960, 440);
 
-    ctx.fillStyle = '#9CA3AF';
-    ctx.font = 'italic 26px "Playfair Display", Georgia, serif';
-    ctx.fillText('for outstanding dedication and mastery of the professional program', 960, 560);
+      // Underline for name
+      ctx.strokeStyle = '#FBBF24';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(660, 495); ctx.lineTo(1260, 495); ctx.stroke();
 
-    // COURSE TITLE (Professional text)
-    ctx.fillStyle = '#FBBF24'; 
-    ctx.font = 'bold 44px Outfit, sans-serif';
-    ctx.fillText(activeCert.courseTitle.toUpperCase(), 960, 645);
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = 'italic 26px "Playfair Display", Georgia, serif';
+      ctx.fillText('for outstanding dedication and mastery of the professional program', 960, 560);
 
-    ctx.fillStyle = '#6B7280'; 
-    ctx.font = 'bold 18px Outfit, sans-serif';
-    ctx.fillText('EVALUATED & CERTIFIED BY THE ELITE COACHING DIVISION', 960, 715);
+      // COURSE TITLE (Professional text)
+      ctx.fillStyle = '#FBBF24'; 
+      ctx.font = 'bold 44px Outfit, sans-serif';
+      ctx.fillText(activeCert.courseTitle.toUpperCase(), 960, 645);
 
-    // 4. Draw Signatures
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#9CA3AF';
-    ctx.font = 'bold 16px Outfit, sans-serif';
-    ctx.fillText('INSTRUCTOR / PHYSIOLOGIST', 300, 900);
-    ctx.fillStyle = '#E5E7EB';
-    ctx.font = 'bold 20px Georgia, serif';
-    ctx.fillText('Dr. Muthu Saravanan', 300, 860);
-    
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(300, 835); ctx.lineTo(550, 835); ctx.stroke();
-    
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'; 
-    ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(320, 825); ctx.bezierCurveTo(360, 785, 420, 845, 460, 815); ctx.stroke();
+      ctx.fillStyle = '#6B7280'; 
+      ctx.font = 'bold 18px Outfit, sans-serif';
+      ctx.fillText('EVALUATED & CERTIFIED BY THE ELITE COACHING DIVISION', 960, 715);
 
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#9CA3AF';
-    ctx.font = 'bold 16px Outfit, sans-serif';
-    ctx.fillText('DIRECTOR OF FITSPHERE', 1620, 900);
-    ctx.fillStyle = '#E5E7EB';
-    ctx.font = 'bold 20px Georgia, serif';
-    ctx.fillText('Aadhavun', 1620, 860);
-    
-    ctx.beginPath(); ctx.moveTo(1370, 835); ctx.lineTo(1620, 835); ctx.stroke();
-    
-    ctx.strokeStyle = 'rgba(184, 255, 34, 0.4)'; 
-    ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(1390, 820); ctx.bezierCurveTo(1450, 840, 1500, 795, 1580, 825); ctx.stroke();
+      // 4. Draw Signatures
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = 'bold 16px Outfit, sans-serif';
+      ctx.fillText('INSTRUCTOR / PHYSIOLOGIST', 300, 900);
+      ctx.fillStyle = '#E5E7EB';
+      ctx.font = 'bold 20px Georgia, serif';
+      ctx.fillText('Dr. Muthu Saravanan', 300, 860);
+      
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(300, 835); ctx.lineTo(550, 835); ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)'; 
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(320, 825); ctx.bezierCurveTo(360, 785, 420, 845, 460, 815); ctx.stroke();
 
-    // 5. Draw Seals (MSME, Gold badge, Startup India)
-    const sealX = 960;
-    const sealY = 855;
-    
-    // Center Gold Seal Rosette
-    ctx.fillStyle = '#D97706'; 
-    ctx.beginPath();
-    for (let i = 0; i < 30; i++) {
-      const angle = (i * Math.PI * 2) / 30;
-      const r = i % 2 === 0 ? 55 : 45;
-      ctx.lineTo(sealX + Math.cos(angle) * r, sealY + Math.sin(angle) * r);
-    }
-    ctx.closePath();
-    ctx.fill();
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.font = 'bold 16px Outfit, sans-serif';
+      ctx.fillText('DIRECTOR OF FITSPHERE', 1620, 900);
+      ctx.fillStyle = '#E5E7EB';
+      ctx.font = 'bold 20px Georgia, serif';
+      ctx.fillText('Aadhavun', 1620, 860);
+      
+      ctx.beginPath(); ctx.moveTo(1370, 835); ctx.lineTo(1620, 835); ctx.stroke();
+      
+      ctx.strokeStyle = 'rgba(184, 255, 34, 0.4)'; 
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(1390, 820); ctx.bezierCurveTo(1450, 840, 1500, 795, 1580, 825); ctx.stroke();
 
-    ctx.fillStyle = '#FBBF24'; 
-    ctx.beginPath(); ctx.arc(sealX, sealY, 42, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#D97706';
-    ctx.beginPath(); ctx.arc(sealX, sealY, 38, 0, Math.PI * 2); ctx.fill();
+      // 5. Draw Seals (MSME logo, Gold seal, Startup India logo)
+      const sealX = 960;
+      const sealY = 855;
+      
+      // Left stamp: MSME logo image
+      const msmeX = 730;
+      const msmeY = 855;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(msmeX, msmeY, 45, 0, Math.PI * 2); ctx.fill();
+      ctx.drawImage(msmeImg, msmeX - 35, msmeY - 35, 70, 70);
 
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#FBBF24';
-    ctx.font = 'bold 10px Outfit, sans-serif';
-    ctx.fillText('FITSPHERE', sealX, sealY - 8);
-    ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText('GOLD SEAL', sealX, sealY + 4);
-    ctx.font = '900 8px Outfit, sans-serif';
-    ctx.fillText('GRADUATE', sealX, sealY + 14);
+      // Center Gold Seal Rosette
+      ctx.fillStyle = '#D97706'; 
+      ctx.beginPath();
+      for (let i = 0; i < 30; i++) {
+        const angle = (i * Math.PI * 2) / 30;
+        const r = i % 2 === 0 ? 55 : 45;
+        ctx.lineTo(sealX + Math.cos(angle) * r, sealY + Math.sin(angle) * r);
+      }
+      ctx.closePath();
+      ctx.fill();
 
-    // Left stamp: MSME Registration
-    const msmeX = 730;
-    const msmeY = 855;
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.7)'; 
-    ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(msmeX, msmeY, 45, 0, Math.PI * 2); ctx.stroke();
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(msmeX, msmeY, 39, 0, Math.PI * 2); ctx.stroke();
-    
-    ctx.fillStyle = 'rgba(16, 185, 129, 0.8)';
-    ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText('REGISTERED', msmeX, msmeY - 14);
-    ctx.font = 'bold 11px Outfit, sans-serif';
-    ctx.fillText('MSME', msmeX, msmeY);
-    ctx.font = 'bold 8px Outfit, sans-serif';
-    ctx.fillText('GOVT. OF INDIA', msmeX, msmeY + 12);
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(msmeX, msmeY, 18, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = '#FBBF24'; 
+      ctx.beginPath(); ctx.arc(sealX, sealY, 42, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#D97706';
+      ctx.beginPath(); ctx.arc(sealX, sealY, 38, 0, Math.PI * 2); ctx.fill();
 
-    // Right stamp: Startup India
-    const startupX = 1190;
-    const startupY = 855;
-    ctx.strokeStyle = 'rgba(217, 119, 6, 0.7)'; 
-    ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.arc(startupX, startupY, 45, 0, Math.PI * 2); ctx.stroke();
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(startupX, startupY, 39, 0, Math.PI * 2); ctx.stroke();
-    
-    ctx.fillStyle = 'rgba(217, 119, 6, 0.8)';
-    ctx.font = 'bold 9px Outfit, sans-serif';
-    ctx.fillText('STARTUP INDIA', startupX, startupY - 14);
-    ctx.font = 'bold 11px Outfit, sans-serif';
-    ctx.fillText('RECOGNIZED', startupX, startupY);
-    ctx.font = 'bold 8px Outfit, sans-serif';
-    ctx.fillText('GOVT. OF INDIA', startupX, startupY + 12);
-    ctx.font = '10px sans-serif';
-    ctx.fillText('★', startupX, startupY + 22);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#FBBF24';
+      ctx.font = 'bold 10px Outfit, sans-serif';
+      ctx.fillText('FITSPHERE', sealX, sealY - 8);
+      ctx.font = 'bold 9px Outfit, sans-serif';
+      ctx.fillText('GOLD SEAL', sealX, sealY + 4);
+      ctx.font = '900 8px Outfit, sans-serif';
+      ctx.fillText('GRADUATE', sealX, sealY + 14);
 
-    // 6. Verification metadata
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#4B5563'; 
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(`VERIFICATION CODE: ${activeCert.verificationCode}  |  ISSUED: ${new Date(activeCert.issueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}  |  PORTAL: FITSPHERE.COM`, 960, 1025);
+      // Right stamp: Startup India logo image
+      const startupX = 1190;
+      const startupY = 855;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(startupX, startupY, 45, 0, Math.PI * 2); ctx.fill();
+      ctx.drawImage(startupImg, startupX - 38, startupY - 38, 76, 76);
 
-    // 7. Trigger download
-    const dataUrl = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    const filename = `${user.name.replace(/\s+/g, '_')}_${activeCourse.title.replace(/\s+/g, '_')}_Certificate.png`;
-    link.download = filename;
-    link.href = dataUrl;
-    link.click();
+      // 6. Verification metadata (moved up slightly)
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#4B5563'; 
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText(`VERIFICATION CODE: ${activeCert.verificationCode}  |  ISSUED: ${new Date(activeCert.issueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}  |  PORTAL: FITSPHERE.COM`, 960, 985);
+
+      // 7. Trigger download
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      const filename = `${user.name.replace(/\s+/g, '_')}_${activeCourse.title.replace(/\s+/g, '_')}_Certificate.png`;
+      link.download = filename;
+      link.href = dataUrl;
+      link.click();
+    }).catch(err => {
+      console.error('Failed to load certificate logo images for canvas export:', err);
+    });
   };
 
   // Fetch notes for active lesson
@@ -789,6 +784,7 @@ export const DashboardPage: React.FC = () => {
       <AnimatePresence>
         {toastMessage && (
           <motion.div
+            key="toast-notification"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
@@ -807,6 +803,7 @@ export const DashboardPage: React.FC = () => {
       <AnimatePresence>
         {showCertModal && activeCert && (
           <motion.div
+            key="certificate-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -857,11 +854,9 @@ export const DashboardPage: React.FC = () => {
 
                   {/* Top: Logo & Title */}
                   <div className="flex flex-col items-center gap-1 mt-2">
-                    {/* Dumbbell Icon styled */}
+                    {/* FitSphere Logo Image */}
                     <div className="flex items-center gap-2">
-                      <div className="bg-brand-cyan/20 px-2.5 py-1 rounded-lg border border-brand-cyan/30 text-brand-cyan">
-                        <span className="text-sm font-bold tracking-tighter">FITSPHERE</span>
-                      </div>
+                      <img src="/fitsphere_logo.png" alt="FitSphere Logo" className="h-8 w-auto object-contain" />
                       <span className="text-[10px] text-gray-500 font-bold tracking-widest uppercase">Estd. 2026</span>
                     </div>
                     <h1 className="text-2xl font-black text-yellow-400 tracking-widest uppercase mt-3" style={{ fontFamily: 'Cinzel, serif' }}>
@@ -905,10 +900,8 @@ export const DashboardPage: React.FC = () => {
                     {/* Three Seals in the Center */}
                     <div className="flex items-center gap-4 -mb-2">
                       {/* MSME Stamp */}
-                      <div className="w-14 h-14 rounded-full border-2 border-emerald-500/40 flex flex-col items-center justify-center p-1 text-[5px] text-emerald-500/70 font-bold bg-emerald-950/20 shadow-[0_0_10px_rgba(16,185,129,0.05)]">
-                        <span>REGISTERED</span>
-                        <span className="text-[7px] font-black text-emerald-500/90 leading-none my-0.5">MSME</span>
-                        <span>GOVT. OF INDIA</span>
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-1 shadow-md overflow-hidden border border-emerald-500/20">
+                        <img src="/msme_logo.png" alt="MSME Logo" className="w-full h-full object-contain" />
                       </div>
 
                       {/* Golden Graduate Badge (Interactive) */}
@@ -928,10 +921,8 @@ export const DashboardPage: React.FC = () => {
                       </motion.div>
 
                       {/* Startup India Stamp */}
-                      <div className="w-14 h-14 rounded-full border-2 border-amber-600/40 flex flex-col items-center justify-center p-1 text-[5px] text-amber-600/70 font-bold bg-amber-950/20 shadow-[0_0_10px_rgba(217,119,6,0.05)]">
-                        <span>STARTUP INDIA</span>
-                        <span className="text-[7px] font-black text-amber-600/90 leading-none my-0.5">RECOGNIZED</span>
-                        <span>GOVT. OF INDIA</span>
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center p-1 shadow-md overflow-hidden border border-amber-600/20">
+                        <img src="/startup_india_logo.png" alt="Startup India Logo" className="w-full h-full object-contain" />
                       </div>
                     </div>
 
@@ -947,7 +938,7 @@ export const DashboardPage: React.FC = () => {
                   </div>
 
                   {/* Security Verification footer */}
-                  <div className="absolute bottom-1 w-full text-[7px] text-gray-600 font-mono flex items-center justify-center gap-1.5">
+                  <div className="absolute bottom-4.5 w-full text-[9px] text-gray-400 font-mono flex items-center justify-center gap-1.5">
                     <span>VERIFICATION CODE: {activeCert.verificationCode}</span>
                     <span>|</span>
                     <span>ISSUED: {new Date(activeCert.issueDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
