@@ -242,12 +242,12 @@ export const DashboardPage: React.FC = () => {
       ctx.beginPath(); ctx.moveTo(40, 960); ctx.lineTo(120, 1040); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(1880, 960); ctx.lineTo(1800, 1040); ctx.stroke();
 
-      // 3. Draw "ESTD. 2026" above logo and FitSphere Banner Logo (centered at x=960, y=140)
+      // 3. Draw "ESTD. 2016" above logo and FitSphere Banner Logo (centered at x=960, y=140)
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = 'rgba(251, 191, 36, 0.7)'; // Gold color
       ctx.font = 'bold 12px Outfit, sans-serif';
-      ctx.fillText('ESTD. 2026', 960, 82);
+      ctx.fillText('ESTD. 2016', 960, 82);
 
       ctx.drawImage(fitsphereImg, 960 - 160, 102, 320, 80);
 
@@ -921,7 +921,7 @@ export const DashboardPage: React.FC = () => {
 
                     {/* Top: Logo & Title */}
                     <div className="flex flex-col items-center gap-1 mt-2">
-                      <span className="text-[8px] text-yellow-500/70 font-black tracking-[0.25em] uppercase mb-0.5">ESTD. 2026</span>
+                      <span className="text-[8px] text-yellow-500/70 font-black tracking-[0.25em] uppercase mb-0.5">ESTD. 2016</span>
                       {/* FitSphere Logo Image */}
                       <div className="flex items-center gap-2">
                         <img src="/fitsphere_logo.png" alt="FitSphere Logo" className="h-8 w-auto object-contain" />
