@@ -1,0 +1,86 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for common validation
+    function isValidString(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    // Courses & Curriculum (Global viewable catalog)
+    match /courses/{courseId} {
+      allow read: if true;
+      allow write: if isValidString(request.resource.data.title, 200)
+        && request.resource.data.price is int
+        && request.resource.data.price >= 0
+        && isValidString(request.resource.data.category, 50);
+
+      match /curriculum/{sectionId} {
+        allow read: if true;
+        allow write: if isValidString(request.resource.data.title, 200)
+          && request.resource.data.lessons is list;
+      }
+    }
+
+    // Landing Page Configuration (baseline metrics, testimonials, specialists)
+    match /landingPage/{docId} {
+      allow read: if true;
+      allow write: if docId == 'config' 
+        && request.resource.data.testimonials is list
+        && request.resource.data.specialists is list;
+    }
+
+    // Settings (Footer info, contact email/phone)
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if docId == 'footer'
+        && isValidString(request.resource.data.phoneNumber, 30)
+        && isValidString(request.resource.data.emailAddress, 100);
+    }
+
+    // Users (Biometrics & active courses progress checklists)
+    match /users/{email} {
+      allow read: if true;
+      allow write: if isValidString(request.resource.data.name, 100)
+        && isValidString(request.resource.data.email, 150)
+        && isValidString(request.resource.data.avatar, 200000) // Support vector emojis & base64
+        && isValidString(request.resource.data.bio, 1000)
+        && request.resource.data.purchasedCourseIds is list
+        && request.resource.data.completedLessonIds is map;
+    }
+
+    // Payments (Logs of purchases made by users)
+    match /payments/{paymentId} {
+      allow read: if true;
+      allow create: if isValidString(request.resource.data.id, 50)
+        && isValidString(request.resource.data.userEmail, 150)
+        && isValidString(request.resource.data.userName, 100)
+        && request.resource.data.purchasedCourseIds is list
+        && request.resource.data.purchasedCoursesDetails is list
+        && (request.resource.data.amountPaid is int || request.resource.data.amountPaid is float)
+        && request.resource.data.amountPaid >= 0
+        && isValidString(request.resource.data.timestamp, 100)
+        && request.resource.data.status == 'Success';
+      allow update, delete: if false;
+    }
+
+    // Notes (Personal training logs/records)
+    match /notes/{noteId} {
+      allow read: if true;
+      allow write: if isValidString(request.resource.data.id, 50)
+        && isValidString(request.resource.data.courseId, 100)
+        && isValidString(request.resource.data.text, 5000) // Prevent Resource DoS
+        && isValidString(request.resource.data.userEmail, 150);
+      allow delete: if true;
+    }
+
+    // Q&A Forum (Community discussions board)
+    match /forum/{postId} {
+      allow read: if true;
+      allow write: if isValidString(request.resource.data.courseId, 100)
+        && isValidString(request.resource.data.user, 100)
+        && isValidString(request.resource.data.text, 5000); // Prevent long spam posts
+    }
+  }
+}

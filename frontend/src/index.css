@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Dark mode variables */
+  --bg-dark: #0a0f18;
+  --surface-dark: #121926;
+  --surface-muted: #1e293b;
+  --text-heading: #ffffff;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --bg-panel: rgba(10, 15, 24, 0.7);
+  --card-bg: rgba(18, 25, 38, 0.65);
+  
+  --brand-neon: #b8ff22;
+  --brand-cyan: #00f5a0;
+}
+
+:root.light {
+  /* Light mode variables */
+  --bg-dark: #f8fafc;
+  --surface-dark: #ffffff;
+  --surface-muted: #f1f5f9;
+  --text-heading: #0f172a;
+  --text-primary: #334155;
+  --text-secondary: #64748b;
+  --border-subtle: rgba(15, 23, 42, 0.08);
+  --bg-panel: rgba(248, 250, 252, 0.85);
+  --card-bg: rgba(255, 255, 255, 0.85);
+  
+  --brand-neon: #9ede1b;
+  --brand-cyan: #05d68d;
+}
+
+@theme {
+  --color-brand-neon: var(--brand-neon);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-red: #ff3b30;
+  
+  /* Map standard colors dynamically for automatic light-mode support */
+  --color-white: var(--text-heading);
+  --color-gray-100: var(--text-primary);
+  --color-gray-200: var(--text-primary);
+  --color-gray-300: var(--text-primary);
+  --color-gray-400: var(--text-secondary);
+  --color-gray-500: var(--text-secondary);
+  
+  --color-bg-dark: var(--bg-dark);
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-muted: var(--surface-muted);
+  --color-brand-neon-glow: rgba(184, 255, 34, 0.15);
+  
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Outfit", system-ui, sans-serif;
+  
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@utility glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+}
+
+@utility glass-panel {
+  background: var(--bg-panel);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+@utility text-glow-neon {
+  text-shadow: 0 0 10px rgba(184, 255, 34, 0.4);
+}
+
+@utility glow-border {
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 0 15px rgba(184, 255, 34, 0.1);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Base custom styles */
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, sans-serif;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-neon);
+}
