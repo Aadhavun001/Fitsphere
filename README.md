@@ -118,21 +118,28 @@ All routes are client-side managed using `react-router-dom` in `frontend/src/App
 
 ---
 
-## 🎨 Core Design Decisions
+## 🛠️ Engineering Architecture & Design Decisions
 
-### 1. Viewport & Device Compatibility (iOS & Safari Optimization)
-- **Dynamic Viewport Height (`dvh`)**: Mobile browsers (especially Safari on iPhone) suffer from address bar collision bugs where typical `vh` values lead to cut-off headers or buttons. We locked layouts to `min-h-dvh` to ensure perfect fits on all mobile viewports.
-- **Horizontal Snapping swipers**: To prevent long, fatigue-inducing vertical scrolling on phone viewports, lists like "Our Specialists" and "Course Catalog Cards" transform into swipeable horizontal tracks (`flex overflow-x-auto snap-x snap-mandatory scrollbar-none`).
+Recruiters and hiring managers looking at this repository will find several production-grade engineering decisions implemented throughout the codebase:
 
-### 2. Localized Aesthetics
-- Integrated Tamil fitness instructor metadata (Dr. Muthu, Selvam Ramasamy, Kavitha), Tamil success story testimonials (Priya Mani, Vikram Surya, Dr. Shalini), and Tamil actor profile avatars (Vikram, Surya, Arya) coupled with local currency representations (₹ Indian Rupees) to craft a high-affinity brand feel.
+### 1. State Synchronization & Caching Strategy
+- **Local-First Session Caching**: Implemented a caching layer using React state combined with `localStorage`. User session credentials, completed checkboxes, and profiles load instantly on mount before the remote database handshake completes, resolving database network latency and providing a fast First Contentful Paint (FCP).
+- **Asynchronous Firestore Sync**: Profile edits, check-offs, and study notes are synchronized to the remote database asynchronously in the background.
 
-### 3. Graceful Database Fallbacks
-- Embedded fallback handling across database bindings. If Firestore takes time to load or keys are not defined, context services cleanly catch errors and operate using local React state, maintaining a fully functional interface.
+### 2. Micro-Frontend & Decoupled Architecture
+- **Monorepo Directory Isolation**: Separated the client interface (`frontend/`) and service endpoints (`backend/`) into isolated sub-workspaces, which are deployed independently to **Vercel** and **Render** respectively. 
+- **CORS-Enabled REST endpoints**: Pre-configured secure cross-origin resource sharing rules, allowing safe, decoupled client-server data exchange.
 
-### 4. Immutable Checkout & Payments Logging
-- Implemented a secure `/payments` top-level collection. Upon checkout, a unique payment transaction is written containing customer details, totals, and purchased course lists. 
-- The Firestore security rules enforce `allow create` permissions but explicitly block updates and deletions (`allow update, delete: if false;`), making transaction history mathematically tamper-proof.
+### 3. Graceful Offline & Database Fallback Engine
+- **Self-Healing State Fallbacks**: Built database connection safety wrappers. If a network interruption occurs or Firebase credentials are unconfigured, the app logs warning telemetry and seamlessly falls back to local memory states. The user interface remains 100% functional without experiencing runtime crashes or blank screens.
+
+### 4. Fintech-Pattern Immutable Transactions & Security
+- **Immutable Payment Ledgers**: Designed the `/payments` logs using a secure database write-once pattern. Firestore security rules allow creation (`allow create`) but explicitly restrict database updates and deletions (`allow update, delete: if false`). This guarantees transaction records are permanently tamper-proof.
+- **Input Sanitization & Resource Exhaustion (DoS) Mitigation**: Programmed string size limits (`isValidString(...)`) and data type safety checks inside `firestore.rules` to prevent database memory bloating or malicious document injection.
+
+### 5. Viewport Compatibility & iOS Safari Optimizations
+- **iOS Safari Viewport Glitch Mitigation**: Mobile Safari frequently clips elements due to address bar animations shifting layout viewports. We adopted dynamic viewport heights (`min-h-dvh`) to guarantee perfect UI boundaries.
+- **Touch-Friendly Scroll Snapping**: Standard vertical scrolling list items were transformed into smooth horizontal-snapping tracks on mobile devices using CSS scroll snap properties (`snap-x snap-mandatory`), providing an app-like experience.
 
 ---
 

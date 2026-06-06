@@ -8,9 +8,12 @@ export const CheckoutPage: React.FC = () => {
   const { cart, user, purchaseCourses } = useApp();
   const [step, setStep] = useState(1); // 1: Billing, 2: Payment, 3: Confirmation
   
-  // Billing details
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
+
+  // Local preservation state to avoid race condition when context clears cart
+  const [purchasedItems, setPurchasedItems] = useState<typeof cart>([]);
+  const [purchasedTotal, setPurchasedTotal] = useState(0);
 
   // Payment method
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'upi' | 'netbanking'>('card');
@@ -66,6 +69,8 @@ export const CheckoutPage: React.FC = () => {
       }
     } else if (step === 2) {
       if (validatePayment()) {
+        setPurchasedItems([...cart]);
+        setPurchasedTotal(total);
         purchaseCourses(); // Context action to unlock courses
         setStep(3);
         setFormErrors({});
@@ -398,7 +403,7 @@ export const CheckoutPage: React.FC = () => {
                   
                   <div className="p-5 rounded-2xl bg-white/5 border border-white/5 text-left w-full flex flex-col gap-3 text-xs">
                     <div className="font-bold text-white uppercase text-[10px] tracking-wider border-b border-white/5 pb-2">Activated Courses</div>
-                    {cart.map((item) => (
+                    {purchasedItems.map((item) => (
                       <div key={item.course.id} className="flex justify-between text-gray-300">
                         <span>{item.course.title}</span>
                         <span className="text-white font-bold">₹{item.course.price.toLocaleString('en-IN')}</span>
@@ -406,7 +411,7 @@ export const CheckoutPage: React.FC = () => {
                     ))}
                     <div className="flex justify-between text-brand-cyan font-bold border-t border-white/5 pt-2">
                       <span>Total Paid</span>
-                      <span>₹{total.toLocaleString('en-IN')}</span>
+                      <span>₹{purchasedTotal.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
 
